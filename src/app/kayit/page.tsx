@@ -59,7 +59,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
 
     try {
       // Validasyon
@@ -93,7 +92,7 @@ export default function RegisterPage() {
       
       alert('Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...');
       router.push('/giris');
-    } catch (err) {
+    } catch {
       setError('Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsLoading(false);
@@ -309,7 +308,7 @@ export default function RegisterPage() {
                 <Link href="#" className="text-blue-600 hover:text-blue-500">
                   Gizlilik Politikası
                 </Link>
-                'nı okudum ve kabul ediyorum *
+                &apos;nı okudum ve kabul ediyorum *
               </label>
             </div>
           </div>

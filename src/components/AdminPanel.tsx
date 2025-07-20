@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
-import { isAdmin, setAdminStatus, removeAdminStatus } from '@/utils/auth';
+import { isAdmin, setAdminStatus } from '@/utils/auth';
 
 const AdminPanel: React.FC = () => {
   const [isUserAdmin, setIsUserAdmin] = useState(false);

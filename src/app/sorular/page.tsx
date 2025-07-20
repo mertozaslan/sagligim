@@ -1,11 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
-import Tag from '@/components/ui/Tag';
 
 interface Comment {
   id: string;
@@ -61,10 +58,8 @@ interface Event {
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [featuredEvent, setFeaturedEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -78,7 +73,7 @@ export default function CommunityPage() {
     tags: [] as string[],
     mood: 'hopeful' as Post['mood']
   });
-  const [availableTags, setAvailableTags] = useState<string[]>([
+  const [availableTags] = useState<string[]>([
     'beslenme', 'egzersiz', 'mental-sağlık', 'kalp-sağlığı', 'diyabet', 
     'kilo-yönetimi', 'uyku', 'stres', 'motivasyon', 'başarı-hikayesi'
   ]);
@@ -97,7 +92,7 @@ export default function CommunityPage() {
         const eventsData = await eventsResponse.json();
         
         // Dummy data için mevcut soruları postlara dönüştür
-        const transformedPosts = questionsData.map((question: any) => ({
+        const transformedPosts = questionsData.map((question: { [key: string]: unknown }) => ({
           ...question,
           type: Math.random() > 0.7 ? 'experience' : Math.random() > 0.5 ? 'celebration' : 'question',
           comments: question.answers || [],
@@ -106,7 +101,6 @@ export default function CommunityPage() {
         
         setPosts(transformedPosts);
         setUsers(usersData);
-        setEvents(eventsData);
         
         // Rastgele bir etkinlik seç
         if (eventsData.length > 0) {
@@ -153,19 +147,15 @@ export default function CommunityPage() {
     return typeData?.icon || '💭';
   };
 
-  const getTypeColor = (type: string) => {
-    const typeData = postTypes.find(t => t.value === type);
-    return typeData?.color || 'gray';
-  };
+
 
   // Filtrelenmiş postlar
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          post.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || post.category === selectedCategory;
     const matchesType = !selectedType || post.type === selectedType;
     
-    return matchesSearch && matchesCategory && matchesType;
+    return matchesSearch && matchesType;
   });
 
   // Kullanıcı bilgisini bul
@@ -260,13 +250,7 @@ export default function CommunityPage() {
     });
   };
 
-  const formatEventTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('tr-TR', { 
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+
 
   const getCategoryGradient = (category: string) => {
     const gradients: Record<string, string> = {
@@ -615,7 +599,7 @@ export default function CommunityPage() {
             </div>
 
             {/* Active Filters - Modern Style */}
-            {(searchTerm || selectedType || selectedCategory) && (
+            {(searchTerm || selectedType) && (
               <div className="mb-6 p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="text-sm font-medium text-gray-600 flex items-center">
@@ -624,7 +608,7 @@ export default function CommunityPage() {
                   </span>
                   {searchTerm && (
                     <span className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-2xl text-sm font-medium flex items-center">
-                      🔍 "{searchTerm}"
+                      🔍 &quot;{searchTerm}&quot;
                       <button onClick={() => setSearchTerm('')} className="ml-2 text-blue-600 hover:text-blue-800 font-bold">×</button>
                     </span>
                   )}

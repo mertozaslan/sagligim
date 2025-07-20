@@ -39,7 +39,7 @@ export default function LoginPage() {
       } else {
         setError('E-posta ve şifre alanları gereklidir.');
       }
-    } catch (err) {
+    } catch {
       setError('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsLoading(false);

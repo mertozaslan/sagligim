@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import EventCard from '@/components/EventCard';
 import Button from '@/components/ui/Button';
@@ -51,23 +51,7 @@ const EventsPage: React.FC = () => {
     setIsUserAdmin(isAdmin());
   }, []);
 
-  useEffect(() => {
-    filterEvents();
-  }, [events, selectedCategory, selectedOrganizer]);
-
-  const loadEvents = async () => {
-    try {
-      const response = await fetch('/data/events.json');
-      const data = await response.json();
-      setEvents(data);
-    } catch (error) {
-      console.error('Etkinlikler yüklenirken hata:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterEvents = () => {
+  const filterEvents = useCallback(() => {
     let filtered = events;
     
     if (selectedCategory !== 'Tümü') {
@@ -79,6 +63,22 @@ const EventsPage: React.FC = () => {
     }
     
     setFilteredEvents(filtered);
+  }, [events, selectedCategory, selectedOrganizer]);
+
+  useEffect(() => {
+    filterEvents();
+  }, [filterEvents]);
+
+  const loadEvents = async () => {
+    try {
+      const response = await fetch('/data/events.json');
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error('Etkinlikler yüklenirken hata:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = (eventId: string) => {

@@ -40,16 +40,15 @@ const Avatar: React.FC<AvatarProps> = ({
 
   if (src && !hasError) {
     return (
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={config.pixels}
+        height={config.pixels}
         className={`${config.size} rounded-full object-cover ${className}`}
         onError={() => {
           console.error('Avatar image failed to load:', src);
           setHasError(true);
-        }}
-        onLoad={() => {
-          console.log('Avatar image loaded successfully:', src);
         }}
       />
     );

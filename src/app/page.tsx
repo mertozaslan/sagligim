@@ -110,7 +110,7 @@ export default function Home() {
                           🎉 <strong>Güzel haberimi paylaşmak istiyorum!</strong>
                         </p>
                         <p className="text-sm text-gray-700 leading-relaxed">
-                          6 ay önce tip 2 diyabet teşhisi konulmuştu. Bugün doktordan çıktım, HbA1c değerim 8.2'den 6.1'e düşmüş! 
+                          6 ay önce tip 2 diyabet teşhisi konulmuştu. Bugün doktordan çıktım, HbA1c değerim 8.2&apos;den 6.1&apos;e düşmüş! 
                           Beslenmeme dikkat etmek ve düzenli yürüyüş gerçekten işe yaramış. Bu topluluktaki destek çok önemliydi 💪
                         </p>
                       </div>

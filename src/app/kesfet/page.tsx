@@ -1,0 +1,344 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import PostCard from '@/components/PostCard';
+import Tag from '@/components/ui/Tag';
+import Button from '@/components/ui/Button';
+import Avatar from '@/components/ui/Avatar';
+
+interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  authorId: string;
+  category: string;
+  tags: string[];
+  readTime: number;
+  publishDate: string;
+  likes: number;
+  commentsCount: number;
+  shares: number;
+  imageUrl?: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  avatar: string;
+  title: string;
+  verified: boolean;
+}
+
+export default function Kesfet() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Dummy verileri yükle
+    const loadData = async () => {
+      try {
+        const [postsResponse, usersResponse] = await Promise.all([
+          fetch('/data/posts.json'),
+          fetch('/data/users.json')
+        ]);
+        
+        const postsData = await postsResponse.json();
+        const usersData = await usersResponse.json();
+        
+        setPosts(postsData);
+        setUsers(usersData);
+      } catch (error) {
+        console.error('Veri yükleme hatası:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Tüm etiketleri al
+  const allTags = Array.from(new Set(posts.flatMap(post => post.tags)));
+  
+  // Filtrelenmiş gönderiler
+  const filteredPosts = selectedTag 
+    ? posts.filter(post => post.tags.includes(selectedTag))
+    : posts;
+
+  // Kullanıcı bilgisini bul
+  const getAuthorById = (authorId: string) => {
+    return users.find(user => user.id === authorId);
+  };
+
+  const handleLike = (postId: string) => {
+    setPosts(prevPosts => 
+      prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, likes: post.likes + 1 }
+          : post
+      )
+    );
+  };
+
+  const handleShare = (postId: string) => {
+    setPosts(prevPosts => 
+      prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, shares: post.shares + 1 }
+          : post
+      )
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">İçerikler yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      {/* <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Sağlık İçeriklerini Keşfedin
+            </h1>
+            <p className="text-xl text-blue-100 mb-6 max-w-3xl mx-auto">
+              Uzman doktorlar tarafından onaylanan binlerce sağlık makalesini, 
+              araştırmaları ve güncel haberleri kategorilere göre keşfedin.
+            </p>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Main Content */}
+      <div className="relative bg-gray-50 min-h-screen">
+        {/* Decorative Elements */}
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col lg:flex-row gap-10">
+            {/* Sol Panel - İçerik */}
+            <div className="flex-1">
+              {/* Filtre Etiketleri */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-2xl"></div>
+                <div className="relative">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
+                      🔍
+                    </div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Konulara Göre Filtrele
+                    </h2>
+                  </div>
+                  <p className="text-gray-600 mb-6">Size en uygun sağlık içeriklerini bulmak için kategorileri kullanın</p>
+                  <div className="flex flex-wrap gap-3">
+                    <Tag
+                      active={selectedTag === null}
+                      onClick={() => setSelectedTag(null)}
+                    >
+                      ✨ Tümü
+                    </Tag>
+                    {allTags.slice(0, 8).map((tag) => (
+                      <Tag
+                        key={tag}
+                        active={selectedTag === tag}
+                        onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                      >
+                        {tag}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* İçerik Başlığı */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                      {selectedTag ? `"${selectedTag}" Konusunda İçerikler` : 'Güncel Sağlık İçerikleri'}
+                    </h2>
+                    <p className="text-gray-600">
+                      {filteredPosts.length} içerik • Uzmanlar tarafından onaylandı
+                    </p>
+                  </div>
+                  <div className="hidden sm:flex items-center space-x-2 bg-white rounded-xl px-4 py-2 shadow-lg border border-gray-200">
+                    <span className="text-sm text-gray-600">Sırala:</span>
+                    <select className="text-sm font-medium text-gray-900 bg-transparent border-none focus:outline-none">
+                      <option>En Yeni</option>
+                      <option>En Popüler</option>
+                      <option>En Çok Beğenilen</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gönderiler */}
+              <div className="space-y-8">
+                {filteredPosts.length === 0 ? (
+                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-16 text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+                      📝
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4">Henüz İçerik Bulunmuyor</h3>
+                    <p className="text-gray-600 text-lg mb-8">Bu kategoride henüz yayınlanmış içerik yok. Diğer kategorileri keşfedebilirsiniz.</p>
+                    <Button onClick={() => setSelectedTag(null)} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                      Tüm İçerikleri Görüntüle
+                    </Button>
+                  </div>
+                ) : (
+                  filteredPosts.map((post) => {
+                    const author = getAuthorById(post.authorId);
+                    if (!author) return null;
+
+                    return (
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        author={author}
+                        onLike={() => handleLike(post.id)}
+                        onShare={() => handleShare(post.id)}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Sağ Panel - Sidebar */}
+            <div className="lg:w-96">
+              {/* Popüler Uzmanlar */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-8 relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-full blur-2xl"></div>
+                <div className="relative">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
+                      👨‍⚕️
+                    </div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Öne Çıkan Uzmanlar
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 mb-6 text-sm">Platformumuzun en deneyimli doktorları</p>
+                  <div className="space-y-5">
+                    {users.filter(user => user.verified).slice(0, 3).map((expert, index) => (
+                      <div key={expert.id} className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative">
+                            <Avatar
+                              src={expert.avatar}
+                              alt={expert.name}
+                              size="md"
+                            />
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs">
+                              {index + 1}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <p className="font-semibold text-gray-900">{expert.name}</p>
+                              <span className="ml-2 text-blue-500">✓</span>
+                            </div>
+                            <p className="text-sm text-gray-600">{expert.title}</p>
+                            <div className="flex items-center mt-1">
+                              <div className="flex text-yellow-400 text-xs">
+                                ⭐⭐⭐⭐⭐
+                              </div>
+                              <span className="text-xs text-gray-500 ml-1">(4.9)</span>
+                            </div>
+                          </div>
+                          <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white group-hover:shadow-lg">
+                            Takip Et
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <Button variant="outline" className="w-full border-2 border-gray-300 hover:border-blue-500 hover:text-blue-500">
+                      <span className="mr-2">👥</span>
+                      Tüm Uzmanları Görüntüle
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Popüler Konular */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 relative overflow-hidden">
+                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-2xl"></div>
+                <div className="relative">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
+                      📈
+                    </div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Popüler Konular
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 mb-6 text-sm">En çok merak edilen sağlık konuları</p>
+                  <div className="space-y-4">
+                    {['kalp', 'beslenme', 'egzersiz', 'anksiyete', 'diyabet'].map((topic, index) => {
+                      const postCount = posts.filter(post => post.tags.includes(topic)).length;
+                      const isPopular = index < 2;
+                      return (
+                        <div key={topic} className={`group relative rounded-xl p-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
+                          isPopular 
+                            ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 hover:shadow-lg' 
+                            : 'bg-gray-50 border border-gray-200 hover:shadow-md'
+                        }`} onClick={() => setSelectedTag(topic)}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              {isPopular && (
+                                <span className="mr-2 text-lg">🔥</span>
+                              )}
+                              <Tag onClick={() => setSelectedTag(topic)} className="pointer-events-none">
+                                {topic}
+                              </Tag>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className={`text-sm font-semibold ${isPopular ? 'text-blue-600' : 'text-gray-600'}`}>
+                                {postCount}
+                              </span>
+                              <span className="text-xs text-gray-500">gönderi</span>
+                              <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Özel Çağrı */}
+                  <div className="mt-8 p-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+                    <div className="relative">
+                      <h4 className="font-bold text-lg mb-2">💡 Soru Sorun</h4>
+                      <p className="text-blue-100 text-sm mb-4">
+                        Aklınızdaki sağlık sorularını uzmanlarımıza sorun, ücretsiz cevap alın!
+                      </p>
+                      <Button className=" text-red-600 hover:bg-gray-100 font-semibold">
+                        Soru Sor
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

@@ -1,0 +1,172 @@
+[
+  {
+    "id": "1",
+    "postId": "1",
+    "authorId": "user1",
+    "content": "Çok faydalı bir yazı olmuş. Özellikle porsiyon kontrolü konusunda yeni şeyler öğrendim. Teşekkürler!",
+    "publishDate": "2024-01-15T10:30:00Z",
+    "likes": 5,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "2",
+        "postId": "1",
+        "authorId": "expert1",
+        "content": "Teşekkür ederim! Porsiyon kontrolü gerçekten çok önemli. Tabak yöntemi başlangıç için harika bir teknik.",
+        "publishDate": "2024-01-15T11:00:00Z",
+        "likes": 8,
+        "parentId": "1"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "postId": "1",
+    "authorId": "user2",
+    "content": "Günde 2.5 litre su içmek çok fazla gelmiyor mu? Ben genelde 1.5 litre içebiliyorum.",
+    "publishDate": "2024-01-15T12:15:00Z",
+    "likes": 3,
+    "parentId": null,
+    "replies": []
+  },
+  {
+    "id": "4",
+    "postId": "2",
+    "authorId": "user3",
+    "content": "Bu egzersizleri denedim, gerçekten etkili! 15 dakika kısa süre gibi geliyor ama oldukça yorucu 😅",
+    "publishDate": "2024-01-14T15:45:00Z",
+    "likes": 7,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "5",
+        "postId": "2",
+        "authorId": "expert2",
+        "content": "Çok güzel! İlk başta zorlanmak normal. Zamanla vücut alışacak ve daha kolay hale gelecek. Devam edin!",
+        "publishDate": "2024-01-14T16:00:00Z",
+        "likes": 6,
+        "parentId": "4"
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "postId": "2",
+    "authorId": "user4",
+    "content": "Şınav yapamıyorum, alternatifi var mı?",
+    "publishDate": "2024-01-14T17:20:00Z",
+    "likes": 2,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "7",
+        "postId": "2",
+        "authorId": "expert2",
+        "content": "Tabii! Diz üstü şınav veya duvara karşı şınav ile başlayabilirsiniz. Güç kazandıkça standart şınava geçersiniz.",
+        "publishDate": "2024-01-14T18:00:00Z",
+        "likes": 9,
+        "parentId": "6"
+      }
+    ]
+  },
+  {
+    "id": "8",
+    "postId": "3",
+    "authorId": "user3",
+    "content": "Ben 12 haftalık hamileyim ve bu tavsiyeler çok işime yaradı. Özellikle folik asit konusu netleşti.",
+    "publishDate": "2024-01-13T14:30:00Z",
+    "likes": 12,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "9",
+        "postId": "3",
+        "authorId": "expert3",
+        "content": "Tebrikler! Folik asit gerçekten çok önemli. Düzenli doktor kontrollerinizi de ihmal etmeyin.",
+        "publishDate": "2024-01-13T15:00:00Z",
+        "likes": 8,
+        "parentId": "8"
+      }
+    ]
+  },
+  {
+    "id": "10",
+    "postId": "4",
+    "authorId": "user4",
+    "content": "Migren konusunda uzman görüşü almak çok değerli. Soğuk kompres tekniğini deneyeceğim.",
+    "publishDate": "2024-01-12T18:00:00Z",
+    "likes": 6,
+    "parentId": null,
+    "replies": []
+  },
+  {
+    "id": "11",
+    "postId": "5",
+    "authorId": "user5",
+    "content": "7 yaşındaki oğlum için çok faydalı bilgiler. Boy uzaması konusunda endişelerim vardı.",
+    "publishDate": "2024-01-11T15:30:00Z",
+    "likes": 4,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "12",
+        "postId": "5",
+        "authorId": "expert5",
+        "content": "Endişelenmeyin, 7 yaş için henüz erken. Beslenme ve uyku düzenine dikkat edin. Gerekirse kontrole gelebilirsiniz.",
+        "publishDate": "2024-01-11T16:00:00Z",
+        "likes": 7,
+        "parentId": "11"
+      }
+    ]
+  },
+  {
+    "id": "13",
+    "postId": "6",
+    "authorId": "user6",
+    "content": "Keto diyeti hakkında çok net bilgi vermişsiniz. Doktor görüşü almadan başlamamaya karar verdim.",
+    "publishDate": "2024-01-10T12:45:00Z",
+    "likes": 8,
+    "parentId": null,
+    "replies": []
+  },
+  {
+    "id": "14",
+    "postId": "7",
+    "authorId": "user7",
+    "content": "Uyku hijyeni kurallarını uygulamaya başladım. Umuyorum işe yarar çünkü gerçekten zorlanıyorum.",
+    "publishDate": "2024-01-09T21:30:00Z",
+    "likes": 5,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "15",
+        "postId": "7",
+        "authorId": "expert6",
+        "content": "Sabırlı olun, uyku düzeni değişmesi 2-3 hafta sürebilir. 2 hafta sonra gelişme olmazsa iletişime geçin.",
+        "publishDate": "2024-01-10T08:00:00Z",
+        "likes": 6,
+        "parentId": "14"
+      }
+    ]
+  },
+  {
+    "id": "16",
+    "postId": "8",
+    "authorId": "user8",
+    "content": "Bu yazıyı okumak beni çok rahatlattı. Ben de benzer şeyler yaşıyorum ve normal olduğunu öğrenmek iyi geldi.",
+    "publishDate": "2024-01-08T17:15:00Z",
+    "likes": 11,
+    "parentId": null,
+    "replies": [
+      {
+        "id": "17",
+        "postId": "8",
+        "authorId": "expert7",
+        "content": "Yaşadığınız duygular çok normal. Ancak 2 haftadan uzun sürerse mutlaka destek alın. Yalnız değilsiniz.",
+        "publishDate": "2024-01-08T18:00:00Z",
+        "likes": 15,
+        "parentId": "16"
+      }
+    ]
+  }
+] 

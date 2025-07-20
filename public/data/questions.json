@@ -1,0 +1,178 @@
+[
+  {
+    "id": "1",
+    "title": "Günlük kaç bardak su içmek gerekir?",
+    "content": "Merhaba, günlük su tüketimi konusunda karışık bilgiler alıyorum. Bazıları 8 bardak diyor, bazıları kilo başına hesaplama yapıyor. Doğru olan nedir? Yaşım 28, kilom 65kg.",
+    "authorId": "user1",
+    "category": "Beslenme",
+    "tags": ["su", "beslenme", "sağlıklı yaşam"],
+    "publishDate": "2024-01-15T10:30:00Z",
+    "views": 142,
+    "likes": 8,
+    "answers": [
+      {
+        "id": "a1",
+        "questionId": "1",
+        "authorId": "expert1",
+        "content": "Günlük su ihtiyacı kişiden kişiye değişir. Genel olarak vücut ağırlığınızın kg başına 30-35ml su içmeniz önerilir. Sizin için bu yaklaşık 2-2.3 litre demek. Ancak aktivite seviyeniz, hava koşulları ve genel sağlık durumunuz da etkilidir.",
+        "publishDate": "2024-01-15T11:45:00Z",
+        "likes": 12,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Egzersiz sonrası kas ağrısı normal mi?",
+    "content": "2 gün önce spor salonuna başladım. Önceden hiç düzenli spor yapmıyordum. Şimdi kaslarımda ciddi ağrı var, özellikle bacaklarımda. Bu normal mi yoksa yanlış bir şey mi yaptım?",
+    "authorId": "user2",
+    "category": "Spor ve Egzersiz",
+    "tags": ["kas ağrısı", "egzersiz", "başlangıç", "DOMS"],
+    "publishDate": "2024-01-14T16:20:00Z",
+    "views": 89,
+    "likes": 5,
+    "answers": [
+      {
+        "id": "a2",
+        "questionId": "2",
+        "authorId": "expert2",
+        "content": "Evet, bu tamamen normal! DOMS (Delayed Onset Muscle Soreness) olarak adlandırılan bu durum, yeni egzersiz programına başlayanların %95'inde görülür. Genellikle 24-72 saat içinde ortaya çıkar ve 3-5 gün içinde kendiliğinden geçer.",
+        "publishDate": "2024-01-14T18:30:00Z",
+        "likes": 8,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Hamilelikte hangi vitaminler alınmalı?",
+    "content": "12 haftalık hamileyim. Doktorum folik asit reçete etti ama internette çok fazla vitamin önerisi görüyorum. Hangilerini almalıyım? Çok karışık oldu.",
+    "authorId": "user3",
+    "category": "Kadın Sağlığı",
+    "tags": ["hamilelik", "vitaminler", "folik asit", "prenatal"],
+    "publishDate": "2024-01-13T09:15:00Z",
+    "views": 203,
+    "likes": 15,
+    "answers": [
+      {
+        "id": "a3",
+        "questionId": "3",
+        "authorId": "expert3",
+        "content": "Hamilelikte temel vitaminler: Folik asit (400-800 mcg), D vitamini (1000-2000 IU), Omega-3, Demir ve Kalsiyum. Ancak dozaj ve kombinasyon için mutlaka doktorunuzla görüşün. Her hamilelik farklıdır.",
+        "publishDate": "2024-01-13T10:30:00Z",
+        "likes": 18,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "title": "Migren ağrılarım için ne yapabilirim?",
+    "content": "Son 3 aydır düzenli migren ataklarım var. Özellikle stresli dönemlerde artıyor. İlaç dışında doğal yöntemler var mı? Yaşam tarzı değişiklikleri önerir misiniz?",
+    "authorId": "user4",
+    "category": "Nöroloji",
+    "tags": ["migren", "baş ağrısı", "stres", "doğal tedavi"],
+    "publishDate": "2024-01-12T14:45:00Z",
+    "views": 156,
+    "likes": 12,
+    "answers": [
+      {
+        "id": "a4",
+        "questionId": "4",
+        "authorId": "expert4",
+        "content": "Migren yönetimi için: Düzenli uyku (7-8 saat), stres yönetimi, su tüketimi, kafein sınırlaması, düzenli öğünler önemli. Magnezyum takviyesi de yardımcı olabilir. Tetikleyici faktörleri not edin.",
+        "publishDate": "2024-01-12T16:20:00Z",
+        "likes": 14,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "title": "Çocuğumun boy kısa kalacak mı?",
+    "content": "7 yaşındaki oğlum sınıfındaki diğer çocuklardan daha kısa. Annesinden benzerlik gösteriyor (o da kısa boylu). Ne zaman endişelenmeli ve doktora götürmeliyim?",
+    "authorId": "user5",
+    "category": "Çocuk Sağlığı",
+    "tags": ["boy uzaması", "çocuk gelişimi", "büyüme", "endokrin"],
+    "publishDate": "2024-01-11T11:30:00Z",
+    "views": 178,
+    "likes": 9,
+    "answers": [
+      {
+        "id": "a5",
+        "questionId": "5",
+        "authorId": "expert5",
+        "content": "Boy gelişimi 18 yaşına kadar devam eder. Genetik faktörler önemli ama beslenme, uyku ve aktivite de etkili. Yılda 5cm'den az uzuyorsa çocuk endokrinolojisine başvurun. Erken müdahale önemli.",
+        "publishDate": "2024-01-11T13:15:00Z",
+        "likes": 11,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "title": "Keto diyeti sağlıklı mı?",
+    "content": "Keto diyeti hakkında çok şey duyuyorum. Hızlı kilo verdiği söyleniyor ama uzun vadede sağlıklı mı? Yan etkileri neler? Kimler yapmamalı?",
+    "authorId": "user6",
+    "category": "Beslenme",
+    "tags": ["keto", "diyet", "kilo verme", "ketojenik"],
+    "publishDate": "2024-01-10T08:20:00Z",
+    "views": 245,
+    "likes": 18,
+    "answers": [
+      {
+        "id": "a6",
+        "questionId": "6",
+        "authorId": "expert1",
+        "content": "Keto diyeti kısa vadede etkili ama uzun vadeli etkileri tartışmalı. Kalp hastalığı, böbrek sorunu, hamilelik durumlarında önerilmez. Mutlaka diyetisyen kontrolünde yapılmalı.",
+        "publishDate": "2024-01-10T10:45:00Z",
+        "likes": 22,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "7",
+    "title": "Uykusuzluk problemi yaşıyorum",
+    "content": "Son 2 aydır düzenli uyuyamıyorum. Yatağa girdiğimde 2-3 saat boyunca dönüp duruyorum. Uyuduğumda da çok erken uyanıyorum. Çözüm önerileriniz neler?",
+    "authorId": "user7",
+    "category": "Uyku Bozuklukları",
+    "tags": ["uykusuzluk", "insomnia", "uyku hijyeni"],
+    "publishDate": "2024-01-09T22:30:00Z",
+    "views": 167,
+    "likes": 14,
+    "answers": [
+      {
+        "id": "a7",
+        "questionId": "7",
+        "authorId": "expert6",
+        "content": "Uyku hijyeni kuralları: Düzenli uyku saatleri, yatak odası sıcaklığı (18-20°C), ekran kullanımını uyumadan 1 saat önce bırakın, kafein öğleden sonra almayın. 2 hafta sürdürün.",
+        "publishDate": "2024-01-10T07:15:00Z",
+        "likes": 16,
+        "helpful": true
+      }
+    ]
+  },
+  {
+    "id": "8",
+    "title": "Doğum sonrası depresyon belirtileri",
+    "content": "3 ay önce doğum yaptım. Son zamanlarda sürekli üzgün hissediyorum, bebeğimle ilgilenmekte zorlanıyorum. Bu normal mi yoksa doktora mı başvurmalıyım?",
+    "authorId": "user8",
+    "category": "Ruh Sağlığı",
+    "tags": ["doğum sonrası depresyon", "annelik", "ruh sağlığı"],
+    "publishDate": "2024-01-08T15:45:00Z",
+    "views": 134,
+    "likes": 11,
+    "answers": [
+      {
+        "id": "a8",
+        "questionId": "8",
+        "authorId": "expert7",
+        "content": "Doğum sonrası depresyon ciddi bir durumdur ve tedavi edilebilir. 2 haftadan fazla süren üzüntü, ilgisizlik, enerji eksikliği varsa mutlaka psikiyatriste başvurun. Utanılacak bir durum değil.",
+        "publishDate": "2024-01-08T17:20:00Z",
+        "likes": 19,
+        "helpful": true
+      }
+    ]
+  }
+] 

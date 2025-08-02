@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 
@@ -696,16 +697,20 @@ export default function CommunityPage() {
 
                         {/* Content Area - Instagram Style */}
                         <div className="mb-5">
-                          <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 cursor-pointer transition-colors line-clamp-2">
-                            {post.title}
-                          </h2>
+                          <Link href={`/sorular/${post.id}`}>
+                            <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 cursor-pointer transition-colors line-clamp-2">
+                              {post.title}
+                            </h2>
+                          </Link>
                           <div className="text-gray-700 leading-relaxed">
                             <p className="line-clamp-4">{post.content}</p>
                           </div>
                           {post.content.length > 200 && (
-                            <button className="text-blue-600 text-sm font-medium mt-2 hover:text-blue-800 transition-colors">
-                              Devamını oku...
-                            </button>
+                            <Link href={`/sorular/${post.id}`}>
+                              <button className="text-blue-600 text-sm font-medium mt-2 hover:text-blue-800 transition-colors">
+                                Devamını oku...
+                              </button>
+                            </Link>
                           )}
                         </div>
 
@@ -743,10 +748,12 @@ export default function CommunityPage() {
                             </button>
 
                             {/* Comment */}
-                            <button className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-blue-50 transition-all group">
-                              <span className="text-lg group-hover:scale-110 transition-transform">💬</span>
-                              <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">{post.comments.length}</span>
+                            <Link href={`/sorular/${post.id}#yorumlar`}>
+                              <button className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-blue-50 transition-all group">
+                                <span className="text-lg group-hover:scale-110 transition-transform">💬</span>
+                                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">{post.comments.length}</span>
                               </button>
+                            </Link>
 
                             {/* Support */}
                             <button className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-green-50 transition-all group">

@@ -1,23 +1,9 @@
 import React, { useState } from 'react';
 import Avatar from './ui/Avatar';
 import Button from './ui/Button';
+import type { Comment, User, Expert } from '@/services/api';
 
-interface Comment {
-  id: string;
-  postId: string;
-  authorId: string;
-  content: string;
-  publishDate: string;
-  likes: number;
-}
-
-interface CommentAuthor {
-  id: string;
-  name: string;
-  avatar: string;
-  title: string;
-  verified: boolean;
-}
+type CommentAuthor = User | Expert;
 
 interface CommentBoxProps {
   comments: Comment[];
@@ -149,7 +135,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({
                         <span className="text-xs text-gray-500">{author.title}</span>
                         <span className="text-xs text-gray-400">•</span>
                         <span className="text-xs text-gray-500">
-                          {formatDate(comment.publishDate)}
+                          {formatDate(comment.createdAt)}
                         </span>
                       </div>
                       <p className="text-gray-700 text-sm leading-relaxed">

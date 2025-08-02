@@ -4,34 +4,12 @@ import Image from 'next/image';
 import Avatar from './ui/Avatar';
 import Badge from './ui/Badge';
 import Tag from './ui/Tag';
-
-interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  authorId: string;
-  category: string;
-  tags: string[];
-  readTime: number;
-  publishDate: string;
-  likes: number;
-  commentsCount: number;
-  shares: number;
-  imageUrl?: string;
-}
-
-interface Author {
-  id: string;
-  name: string;
-  avatar: string;
-  title: string;
-  verified: boolean;
-}
+import { usePostsStore } from '../stores';
+import type { Post, User, Expert } from '../services/api';
 
 interface PostCardProps {
   post: Post;
-  author: Author;
+  author: User | Expert;
   onLike?: () => void;
   onShare?: () => void;
 }
@@ -42,6 +20,8 @@ const PostCard: React.FC<PostCardProps> = ({
   onLike,
   onShare,
 }) => {
+  const { likePost, sharePost } = usePostsStore();
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -58,13 +38,28 @@ const PostCard: React.FC<PostCardProps> = ({
     });
   };
 
+  const handleLike = () => {
+    likePost(post.id);
+    onLike?.();
+  };
+
+  const handleShare = () => {
+    sharePost(post.id);
+    onShare?.();
+  };
+
+  // Post içeriğinden excerpt oluştur
+  const excerpt = post.content.length > 150 
+    ? post.content.substring(0, 150) + '...' 
+    : post.content;
+
   return (
     <article className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
       {/* Görsel */}
-      {post.imageUrl && (
+      {post.image && (
         <div className="relative h-48 w-full">
           <Image
-            src={post.imageUrl}
+            src={post.image}
             alt={post.title}
             fill
             className="object-cover"
@@ -76,7 +71,7 @@ const PostCard: React.FC<PostCardProps> = ({
       <div className="p-6">
         {/* Header - Yazar bilgileri */}
         <div className="flex items-center space-x-3 mb-4">
-          <Link href={`/profil/${author.id}`}>
+          <Link href={`/profil/${author.username}`}>
             <Avatar
               src={author.avatar}
               alt={author.name}
@@ -87,7 +82,7 @@ const PostCard: React.FC<PostCardProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
               <Link 
-                href={`/profil/${author.id}`}
+                href={`/profil/${author.username}`}
                 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
               >
                 {author.name}
@@ -122,7 +117,7 @@ const PostCard: React.FC<PostCardProps> = ({
             </h2>
           </Link>
           <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
-            {post.excerpt}
+            {excerpt}
           </p>
         </div>
 
@@ -142,7 +137,7 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center space-x-4">
             <button
-              onClick={onLike}
+              onClick={handleLike}
               className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors group"
             >
               <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,11 +153,11 @@ const PostCard: React.FC<PostCardProps> = ({
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <span className="text-sm font-medium">{post.commentsCount}</span>
+              <span className="text-sm font-medium">{post.comments}</span>
             </Link>
 
             <button
-              onClick={onShare}
+              onClick={handleShare}
               className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

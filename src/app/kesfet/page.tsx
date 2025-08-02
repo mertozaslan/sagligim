@@ -5,60 +5,35 @@ import PostCard from '@/components/PostCard';
 import Tag from '@/components/ui/Tag';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
-
-interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  authorId: string;
-  category: string;
-  tags: string[];
-  readTime: number;
-  publishDate: string;
-  likes: number;
-  commentsCount: number;
-  shares: number;
-  imageUrl?: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-  title: string;
-  verified: boolean;
-}
+import { usePostsStore, useUsersStore } from '@/stores';
+import type { Post, User, Expert } from '@/services/api';
 
 export default function Kesfet() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  
+  // Zustand stores
+  const { 
+    posts, 
+    loading: postsLoading, 
+    error: postsError, 
+    fetchPosts 
+  } = usePostsStore();
+  
+  const { 
+    users, 
+    experts, 
+    loading: usersLoading, 
+    error: usersError, 
+    fetchUsers, 
+    fetchExperts 
+  } = useUsersStore();
 
   useEffect(() => {
-    // Dummy verileri yükle
-    const loadData = async () => {
-      try {
-        const [postsResponse, usersResponse] = await Promise.all([
-          fetch('/data/posts.json'),
-          fetch('/data/users.json')
-        ]);
-        
-        const postsData = await postsResponse.json();
-        const usersData = await usersResponse.json();
-        
-        setPosts(postsData);
-        setUsers(usersData);
-      } catch (error) {
-        console.error('Veri yükleme hatası:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+    // Verileri yükle
+    fetchPosts();
+    fetchUsers();
+    fetchExperts();
+  }, [fetchPosts, fetchUsers, fetchExperts]);
 
   // Tüm etiketleri al
   const allTags = Array.from(new Set(posts.flatMap(post => post.tags)));
@@ -69,29 +44,15 @@ export default function Kesfet() {
     : posts;
 
   // Kullanıcı bilgisini bul
-  const getAuthorById = (authorId: string) => {
-    return users.find(user => user.id === authorId);
+  const getAuthorById = (authorId: string): User | Expert | null => {
+    const user = users.find(user => user.id === authorId);
+    if (user) return user;
+    
+    const expert = experts.find(expert => expert.id === authorId);
+    return expert || null;
   };
 
-  const handleLike = (postId: string) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => 
-        post.id === postId 
-          ? { ...post, likes: post.likes + 1 }
-          : post
-      )
-    );
-  };
-
-  const handleShare = (postId: string) => {
-    setPosts(prevPosts => 
-      prevPosts.map(post => 
-        post.id === postId 
-          ? { ...post, shares: post.shares + 1 }
-          : post
-      )
-    );
-  };
+  const loading = postsLoading || usersLoading;
 
   if (loading) {
     return (
@@ -104,23 +65,34 @@ export default function Kesfet() {
     );
   }
 
+  if (postsError || usersError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+            ❌
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">Hata Oluştu</h3>
+          <p className="text-gray-600 mb-8">
+            {postsError || usersError}
+          </p>
+          <Button 
+            onClick={() => {
+              fetchPosts();
+              fetchUsers();
+              fetchExperts();
+            }} 
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+          >
+            Tekrar Dene
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      {/* <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Sağlık İçeriklerini Keşfedin
-            </h1>
-            <p className="text-xl text-blue-100 mb-6 max-w-3xl mx-auto">
-              Uzman doktorlar tarafından onaylanan binlerce sağlık makalesini, 
-              araştırmaları ve güncel haberleri kategorilere göre keşfedin.
-            </p>
-          </div>
-        </div>
-      </div> */}
-
       {/* Main Content */}
       <div className="relative bg-gray-50 min-h-screen">
         {/* Decorative Elements */}
@@ -208,8 +180,6 @@ export default function Kesfet() {
                         key={post.id}
                         post={post}
                         author={author}
-                        onLike={() => handleLike(post.id)}
-                        onShare={() => handleShare(post.id)}
                       />
                     );
                   })
@@ -233,7 +203,7 @@ export default function Kesfet() {
                   </div>
                   <p className="text-gray-600 mb-6 text-sm">Platformumuzun en deneyimli doktorları</p>
                   <div className="space-y-5">
-                    {users.filter(user => user.verified).slice(0, 3).map((expert, index) => (
+                    {experts.slice(0, 3).map((expert, index) => (
                       <div key={expert.id} className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <div className="flex items-center space-x-4">
                           <div className="relative">
@@ -251,12 +221,12 @@ export default function Kesfet() {
                               <p className="font-semibold text-gray-900">{expert.name}</p>
                               <span className="ml-2 text-blue-500">✓</span>
                             </div>
-                            <p className="text-sm text-gray-600">{expert.title}</p>
+                            <p className="text-sm text-gray-600">{expert.specialty}</p>
                             <div className="flex items-center mt-1">
                               <div className="flex text-yellow-400 text-xs">
                                 ⭐⭐⭐⭐⭐
                               </div>
-                              <span className="text-xs text-gray-500 ml-1">(4.9)</span>
+                              <span className="text-xs text-gray-500 ml-1">({expert.rating})</span>
                             </div>
                           </div>
                           <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white group-hover:shadow-lg">

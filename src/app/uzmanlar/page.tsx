@@ -230,7 +230,7 @@ export default function ExpertsPage() {
                   <div className="flex items-center">
                     <span className="mx-2">•</span>
                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      "{searchTerm}"
+                      &ldquo;{searchTerm}&rdquo;
                     </span>
                   </div>
                 )}

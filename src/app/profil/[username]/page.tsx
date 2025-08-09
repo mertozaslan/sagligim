@@ -10,36 +10,43 @@ import PostCard from '@/components/PostCard';
 
 interface User {
   id: string;
-  username: string;
   name: string;
+  username: string;
   email: string;
   avatar: string;
-  isExpert: boolean;
-  specialty?: string;
   title: string;
-  city: string;
   bio: string;
+  verified: boolean;
+  userType: 'user' | 'expert';
+  joinDate: string;
   followersCount: number;
   followingCount: number;
   postsCount: number;
-  verified: boolean;
-  joinDate: string;
+  specialty?: string;
+  experience?: number;
+  education?: string;
+  certifications?: string[];
+  city?: string;
+  rating?: number;
+  reviewCount?: number;
+  consultationFee?: number;
 }
 
 interface Post {
   id: string;
   title: string;
   slug: string;
-  excerpt: string;
+  content: string;
   authorId: string;
   category: string;
   tags: string[];
   readTime: number;
   publishDate: string;
   likes: number;
-  commentsCount: number;
+  comments: number;
   shares: number;
-  imageUrl?: string;
+  views: number;
+  image?: string;
 }
 
 export default function ProfilePage() {
@@ -292,7 +299,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
 
-                  {user.isExpert && (
+                  {user.userType === 'expert' && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Uzmanlık Bilgileri</h3>
                       <div className="bg-gray-50 rounded-lg p-4">

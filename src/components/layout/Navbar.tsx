@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
@@ -25,14 +26,19 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
+            <Link href="/" className="flex items-center">
+              <div className="relative h-16">
+                <Image
+                  src="/logoSaglik.png"
+                  alt="Sağlık Hep Logo"
+                  width={320}
+                  height={175}
+                  className="object-contain h-16 w-auto"
+                />
               </div>
-              <span className="text-xl font-bold text-gray-900">Sağlığım</span>
             </Link>
           </div>
 

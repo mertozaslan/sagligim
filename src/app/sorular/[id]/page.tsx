@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Tag from '@/components/ui/Tag';
 import CommentBox from '@/components/CommentBox';
+import SimilarContent from '@/components/SimilarContent';
 import { useQuestionsStore, useUsersStore, useCommentsStore } from '@/stores';
 import type { Question, User, Expert, Comment } from '@/services/api';
 
@@ -372,144 +373,107 @@ export default function QuestionDetailPage() {
                 />
               </div>
 
-              {/* Benzer Sorular */}
-              {similarQuestions.length > 0 && (
-                <div className="mt-12">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                      <span className="text-blue-600 mr-3">🤔</span>
-                      Benzer Sorular
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {similarQuestions.map((similarQuestion) => {
-                        const similarAuthor = getAuthorById(similarQuestion.authorId);
-                        if (!similarAuthor) return null;
-
-                        return (
-                          <div key={similarQuestion.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-center space-x-3 mb-3">
-                              <Avatar
-                                src={similarAuthor.avatar}
-                                alt={similarAuthor.name}
-                                size="sm"
-                              />
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{similarAuthor.name}</p>
-                                <p className="text-xs text-gray-500">{getTimeAgo(similarQuestion.createdAt)}</p>
-                              </div>
-                            </div>
-                            <Link href={`/sorular/${similarQuestion.id}`}>
-                              <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
-                                {similarQuestion.title}
-                              </h3>
-                            </Link>
-                            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                              {similarQuestion.content.substring(0, 100)}...
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-lg">❓</span>
-                              </div>
-                              <span className="text-xs text-gray-500">{similarQuestion.answersCount} cevap</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Benzer Paylaşımlar */}
+              <SimilarContent
+                title="Benzer Paylaşımlar"
+                subtitle="İlginizi çekebilecek diğer deneyimler ve paylaşımlar"
+                icon="💬"
+                items={similarQuestions}
+                authors={[...users, ...experts]}
+                type="questions"
+                getTimeAgo={getTimeAgo}
+                gradientColors={{
+                  bg: "bg-gradient-to-br from-white via-amber-50/40 to-orange-50/40",
+                  decorative1: "bg-gradient-to-br from-amber-400/10 to-orange-400/10",
+                  decorative2: "bg-gradient-to-br from-orange-400/10 to-red-400/10",
+                  iconBg: "bg-gradient-to-br from-amber-500 to-orange-500",
+                  titleGradient: "bg-gradient-to-r from-gray-900 via-amber-800 to-orange-800",
+                  cardHover: "bg-gradient-to-br from-transparent via-transparent to-amber-50/30",
+                  statusColors: {
+                    active: "bg-green-100 text-green-700",
+                    inactive: "bg-amber-100 text-amber-700"
+                  }
+                }}
+              />
             </article>
           </div>
 
           {/* Sağ Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
-              {/* Hızlı Aksiyonlar */}
-              <div className="space-y-4">
-                <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 text-white shadow-xl">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                  <div className="relative">
-                    <div className="flex items-center mb-3">
-                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl mr-3">
-                        💡
-                      </div>
-                      <h4 className="font-bold text-lg">Soru Sorun</h4>
-                    </div>
-                    <p className="text-emerald-100 text-sm mb-4 leading-relaxed">
-                      Aklınızdaki sağlık sorularını uzmanlarımıza sorun, hızlıca cevap alın!
-                    </p>
-                    <Link href="/sorular">
-                      <Button size="sm" className="bg-white text-emerald-600 hover:bg-gray-100 font-semibold w-full shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all">
-                        Yeni Soru Sor
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
 
-                <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl p-6 text-white shadow-xl">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                  <div className="relative">
-                    <div className="flex items-center mb-3">
-                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl mr-3">
-                        👨‍⚕️
-                      </div>
-                      <h4 className="font-bold text-lg">Uzman Desteği</h4>
-                    </div>
-                    <p className="text-violet-100 text-sm mb-4 leading-relaxed">
-                      Bu soruya uzman doktorlarımız cevap verebilir, hemen başvurun!
-                    </p>
-                    <Button size="sm" className="bg-white text-violet-600 hover:bg-gray-100 font-semibold w-full shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all">
-                      Uzman Desteği Al
-                    </Button>
-                  </div>
-                </div>
-              </div>
 
               {/* Yeni Sorular */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-xl"></div>
-                <div className="relative">
+              <div className="relative overflow-hidden bg-gradient-to-br from-white via-cyan-50/30 to-blue-50/30 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm">
+                <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-br from-cyan-400/10 to-blue-400/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-xl"></div>
+                <div className="relative p-6">
                   <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center text-white text-lg mr-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
                       🆕
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">Yeni Sorular</h3>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Yeni Sorular
+                    </h3>
                   </div>
                   <div className="space-y-4">
-                    {recentQuestions.map((recentQuestion) => {
+                    {recentQuestions.map((recentQuestion, index) => {
                       const recentAuthor = getAuthorById(recentQuestion.authorId);
                       if (!recentAuthor) return null;
+
+                      const isRecent = index < 2;
 
                       return (
                         <div key={recentQuestion.id} className="group">
                           <Link href={`/sorular/${recentQuestion.id}`}>
-                            <div className="p-4 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:shadow-md border border-gray-100 hover:border-blue-200">
+                            <div className={`relative p-4 rounded-xl transition-all duration-300 hover:shadow-lg border ${
+                              isRecent 
+                                ? 'bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-200 hover:scale-105' 
+                                : 'bg-white border-gray-100 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-blue-50 hover:border-cyan-200'
+                            }`}>
+                              {isRecent && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="w-5 h-5 bg-gradient-to-r from-orange-400 to-red-400 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-bold">🔥</span>
+                                  </div>
+                                </div>
+                              )}
                               <div className="flex items-center space-x-3 mb-3">
                                 <div className="relative">
                                   <Avatar
                                     src={recentAuthor.avatar}
                                     alt={recentAuthor.name}
                                     size="sm"
+                                    className="ring-2 ring-white shadow-sm"
                                   />
-                                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <span className="text-white text-xs">?</span>
+                                    </div>
+                                  </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-gray-900 truncate">{recentAuthor.name}</p>
                                   <p className="text-xs text-gray-500">{getTimeAgo(recentQuestion.createdAt)}</p>
                                 </div>
                               </div>
-                              <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                              <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-cyan-600 transition-colors leading-snug">
                                 {recentQuestion.title}
                               </h4>
-                              <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                              <p className="text-sm text-gray-600 line-clamp-2 mb-3 leading-relaxed">
                                 {recentQuestion.content.substring(0, 80)}...
                               </p>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-lg">❓</span>
+                                  <div className="w-6 h-6 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-lg flex items-center justify-center">
+                                    <span className="text-cyan-600 text-sm">❓</span>
+                                  </div>
                                 </div>
-                                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-medium">
+                                <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                                  isRecent 
+                                    ? 'bg-gradient-to-r from-cyan-100 to-blue-100 text-cyan-700' 
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
                                   {recentQuestion.answersCount} cevap
                                 </span>
                               </div>
@@ -521,7 +485,8 @@ export default function QuestionDetailPage() {
                   </div>
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <Link href="/sorular">
-                      <Button variant="outline" size="sm" className="w-full border-2 border-gray-200 hover:border-blue-500 hover:text-blue-500 font-semibold">
+                      <Button variant="outline" size="sm" className="w-full border-2 border-gray-200 hover:border-cyan-500 hover:text-cyan-600 font-semibold">
+                        <span className="mr-2">❓</span>
                         Tüm Soruları Görüntüle
                       </Button>
                     </Link>

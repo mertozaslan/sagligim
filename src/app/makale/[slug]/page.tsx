@@ -10,6 +10,8 @@ import Badge from '@/components/ui/Badge';
 import Tag from '@/components/ui/Tag';
 import CommentBox from '@/components/CommentBox';
 import PostCard from '@/components/PostCard';
+import PopularTopics from '@/components/PopularTopics';
+import SimilarContent from '@/components/SimilarContent';
 import { usePostsStore, useUsersStore, useCommentsStore } from '@/stores';
 import type { Post, User, Expert } from '@/services/api';
 
@@ -393,191 +395,151 @@ export default function ArticlePage() {
               </div>
 
               {/* Benzer Makaleler */}
-              {similarPosts.length > 0 && (
-                <div className="mt-12">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                      <span className="text-blue-600 mr-3">📚</span>
-                      Benzer Makaleler
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {similarPosts.map((similarPost) => {
-                        const similarAuthor = getAuthorById(similarPost.authorId);
-                        if (!similarAuthor) return null;
-
-                        return (
-                          <div key={similarPost.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-center space-x-3 mb-3">
-                              <Avatar
-                                src={similarAuthor.avatar}
-                                alt={similarAuthor.name}
-                                size="sm"
-                              />
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{similarAuthor.name}</p>
-                                <p className="text-xs text-gray-500">{getTimeAgo(similarPost.publishDate)}</p>
-                              </div>
-                            </div>
-                            <Link href={`/makale/${similarPost.slug}`}>
-                              <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
-                                {similarPost.title}
-                              </h3>
-                            </Link>
-                            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                              {similarPost.content.substring(0, 100)}...
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <Badge variant="primary" size="sm">
-                                {similarPost.category}
-                              </Badge>
-                              <span className="text-xs text-gray-500">{similarPost.readTime} dk</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <SimilarContent
+                title="Benzer Makaleler"
+                subtitle="Size ilgi çekebilecek diğer içerikler"
+                icon="📚"
+                items={similarPosts}
+                authors={[...users, ...experts]}
+                type="posts"
+                getTimeAgo={getTimeAgo}
+                gradientColors={{
+                  bg: "bg-gradient-to-br from-white via-blue-50/40 to-indigo-50/40",
+                  decorative1: "bg-gradient-to-br from-blue-400/10 to-indigo-400/10",
+                  decorative2: "bg-gradient-to-br from-indigo-400/10 to-purple-400/10",
+                  iconBg: "bg-gradient-to-br from-blue-500 to-indigo-500",
+                  titleGradient: "bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800",
+                  cardHover: "bg-gradient-to-br from-transparent via-transparent to-blue-50/30",
+                  statusColors: {
+                    active: "bg-green-100 text-green-700",
+                    inactive: "bg-blue-100 text-blue-700"
+                  }
+                }}
+              />
             </article>
           </div>
 
           {/* Sağ Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8 space-y-6">
+            <div className="sticky top-8 space-y-8">
               {/* Author Card */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Yazar Hakkında</h3>
-                <div className="text-center">
-                  <Link href={`/profil/${author.username}`}>
-                    <Avatar
-                      src={author.avatar}
-                      alt={author.name}
-                      size="lg"
-                      className="mx-auto mb-3 cursor-pointer"
-                    />
-                  </Link>
-                  <h4 className="font-semibold text-gray-900 mb-1">{author.name}</h4>
-                  <p className="text-sm text-gray-600 mb-2">{author.title}</p>
-                  {'specialty' in author && (
-                    <Badge variant="primary" size="sm" className="mb-3">
-                      {author.specialty}
-                    </Badge>
-                  )}
-                  <p className="text-xs text-gray-500 mb-4 line-clamp-3">
-                    {author.bio}
-                  </p>
-                  <div className="flex space-x-2">
-                    <Button size="sm" className="flex-1">
-                      Takip Et
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Mesaj
-                    </Button>
+              <div className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-xl"></div>
+                <div className="relative p-8">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
+                      ✍️
+                    </div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Yazar Hakkında
+                    </h3>
+                  </div>
+                  <div className="text-center">
+                    <Link href={`/profil/${author.username}`}>
+                      <div className="relative inline-block group">
+                        <Avatar
+                          src={author.avatar}
+                          alt={author.name}
+                          size="lg"
+                          className="mx-auto mb-4 cursor-pointer ring-4 ring-white shadow-xl group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
+                    </Link>
+                    <h4 className="font-bold text-xl text-gray-900 mb-2">{author.name}</h4>
+                    <p className="text-sm font-medium text-gray-600 mb-3">{author.title}</p>
+                    {'specialty' in author && (
+                      <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 mb-4">
+                        <span className="text-blue-700 font-semibold text-sm">{author.specialty}</span>
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-600 mb-6 line-clamp-3 leading-relaxed">
+                      {author.bio}
+                    </p>
+                    <div className="flex space-x-3">
+                      <Button size="sm" className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all">
+                        <span className="mr-2">👤</span>
+                        Takip Et
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:text-blue-500 font-semibold">
+                        <span className="mr-2">💬</span>
+                        Mesaj
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Yeni Gönderiler */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <span className="text-green-600 mr-2">🆕</span>
-                  Yeni Gönderiler
-                </h3>
-                <div className="space-y-4">
-                  {recentPosts.map((recentPost) => {
-                    const recentAuthor = getAuthorById(recentPost.authorId);
-                    if (!recentAuthor) return null;
+              <div className="relative overflow-hidden bg-gradient-to-br from-white via-green-50/30 to-emerald-50/30 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-400/10 to-emerald-400/10 rounded-full blur-xl"></div>
+                <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 rounded-full blur-lg"></div>
+                <div className="relative p-6">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
+                      🆕
+                    </div>
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Yeni Gönderiler
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {recentPosts.map((recentPost) => {
+                      const recentAuthor = getAuthorById(recentPost.authorId);
+                      if (!recentAuthor) return null;
 
-                    return (
-                      <div key={recentPost.id} className="group">
-                        <Link href={`/makale/${recentPost.slug}`}>
-                          <div className="p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <Avatar
-                                src={recentAuthor.avatar}
-                                alt={recentAuthor.name}
-                                size="sm"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">{recentAuthor.name}</p>
-                                <p className="text-xs text-gray-500">{getTimeAgo(recentPost.publishDate)}</p>
+                      return (
+                        <div key={recentPost.id} className="group">
+                          <Link href={`/makale/${recentPost.slug}`}>
+                            <div className="p-4 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-300 hover:shadow-md border border-transparent hover:border-green-200">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <div className="relative">
+                                  <Avatar
+                                    src={recentAuthor.avatar}
+                                    alt={recentAuthor.name}
+                                    size="sm"
+                                  />
+                                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900 truncate">{recentAuthor.name}</p>
+                                  <p className="text-xs text-gray-500">{getTimeAgo(recentPost.publishDate)}</p>
+                                </div>
+                              </div>
+                              <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-green-600 transition-colors">
+                                {recentPost.title}
+                              </h4>
+                              <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                                {recentPost.content.substring(0, 80)}...
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200">
+                                  <span className="text-green-700 font-semibold text-xs">{recentPost.category}</span>
+                                </div>
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">{recentPost.readTime} dk</span>
                               </div>
                             </div>
-                            <h4 className="font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                              {recentPost.title}
-                            </h4>
-                            <p className="text-xs text-gray-600 line-clamp-2">
-                              {recentPost.content.substring(0, 80)}...
-                            </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <Badge variant="primary" size="sm">
-                                {recentPost.category}
-                              </Badge>
-                              <span className="text-xs text-gray-500">{recentPost.readTime} dk</span>
-                            </div>
-                          </div>
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <Link href="/kesfet">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Tüm Gönderileri Görüntüle
-                    </Button>
-                  </Link>
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <Link href="/kesfet">
+                      <Button variant="outline" size="sm" className="w-full border-2 border-gray-200 hover:border-green-500 hover:text-green-500 font-semibold">
+                        <span className="mr-2">📚</span>
+                        Tüm Gönderileri Görüntüle
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
 
               {/* Popüler Konular */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <span className="text-purple-600 mr-2">🔥</span>
-                  Popüler Konular
-                </h3>
-                <div className="space-y-3">
-                  {['kalp-sağlığı', 'beslenme', 'egzersiz', 'mental-sağlık', 'uyku'].map((topic) => {
-                    const postCount = posts.filter(p => p.tags.includes(topic)).length;
-                    return (
-                      <Link key={topic} href={`/kesfet?tag=${topic}`}>
-                        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                          <span className="text-sm font-medium text-gray-700">#{topic}</span>
-                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                            {postCount}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
+              <PopularTopics posts={posts} />
 
-              {/* Hızlı Aksiyonlar */}
-              <div className="space-y-3">
-                <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg p-4 text-white">
-                  <h4 className="font-bold text-sm mb-2">💡 Soru Sorun</h4>
-                  <p className="text-blue-100 text-xs mb-3">
-                    Aklınızdaki sağlık sorularını uzmanlarımıza sorun!
-                  </p>
-                  <Link href="/sorular">
-                    <Button size="sm" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold w-full">
-                      Soru Sor
-                    </Button>
-                  </Link>
-                </div>
 
-                <div className="bg-gradient-to-br from-green-600 to-teal-600 rounded-lg p-4 text-white">
-                  <h4 className="font-bold text-sm mb-2">👨‍⚕️ Uzman Desteği</h4>
-                  <p className="text-green-100 text-xs mb-3">
-                    Bu konuda uzman doktorlarımızla görüşün!
-                  </p>
-                  <Button size="sm" className="bg-white text-green-600 hover:bg-gray-100 font-semibold w-full">
-                    Uzman Desteği Al
-                  </Button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

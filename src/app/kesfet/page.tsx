@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PostCard from '@/components/PostCard';
+import PopularTopics from '@/components/PopularTopics';
 import Tag from '@/components/ui/Tag';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
@@ -258,51 +259,13 @@ export default function Kesfet() {
                     </h3>
                   </div>
                   <p className="text-gray-600 mb-6 text-sm">En çok merak edilen sağlık konuları</p>
-                  <div className="space-y-4">
-                    {['kalp', 'beslenme', 'egzersiz', 'anksiyete', 'diyabet'].map((topic, index) => {
-                      const postCount = posts.filter(post => post.tags.includes(topic)).length;
-                      const isPopular = index < 2;
-                      return (
-                        <div key={topic} className={`group relative rounded-xl p-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer ${
-                          isPopular 
-                            ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 hover:shadow-lg' 
-                            : 'bg-gray-50 border border-gray-200 hover:shadow-md'
-                        }`} onClick={() => setSelectedTag(topic)}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              {isPopular && (
-                                <span className="mr-2 text-lg">🔥</span>
-                              )}
-                              <Tag onClick={() => setSelectedTag(topic)} className="pointer-events-none">
-                                {topic}
-                              </Tag>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span className={`text-sm font-semibold ${isPopular ? 'text-blue-600' : 'text-gray-600'}`}>
-                                {postCount}
-                              </span>
-                              <span className="text-xs text-gray-500">gönderi</span>
-                              <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <PopularTopics 
+                    posts={posts} 
+                    onTopicClick={setSelectedTag} 
+                    variant="main" 
+                  />
                   
-                  {/* Özel Çağrı */}
-                  <div className="mt-8 p-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
-                    <div className="relative">
-                      <h4 className="font-bold text-lg mb-2">💡 Soru Sorun</h4>
-                      <p className="text-blue-100 text-sm mb-4">
-                        Aklınızdaki sağlık sorularını uzmanlarımıza sorun, ücretsiz cevap alın!
-                      </p>
-                      <Button className=" text-red-600 hover:bg-gray-100 font-semibold">
-                        Soru Sor
-                      </Button>
-                    </div>
-                  </div>
+
                 </div>
               </div>
             </div>

@@ -7,6 +7,7 @@ import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import PostCard from '@/components/PostCard';
+import type { Post } from '@/services/posts';
 
 interface User {
   id: string;
@@ -30,23 +31,6 @@ interface User {
   rating?: number;
   reviewCount?: number;
   consultationFee?: number;
-}
-
-interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  authorId: string;
-  category: string;
-  tags: string[];
-  readTime: number;
-  publishDate: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  views: number;
-  image?: string;
 }
 
 export default function ProfilePage() {
@@ -76,7 +60,7 @@ export default function ProfilePage() {
         if (foundUser) {
           setUser(foundUser);
           // Kullanıcının gönderilerini filtrele
-          const userPostsFiltered = postsData.filter((post: Post) => post.authorId === foundUser.id);
+          const userPostsFiltered = postsData.filter((post: Post) => post.author._id === foundUser.id);
           setUserPosts(userPostsFiltered);
         }
       } catch (error) {
@@ -110,8 +94,8 @@ export default function ProfilePage() {
   const handleLike = (postId: string) => {
     setUserPosts(prevPosts =>
       prevPosts.map(post =>
-        post.id === postId
-          ? { ...post, likes: post.likes + 1 }
+        post._id === postId
+          ? { ...post, likesCount: post.likesCount + 1 }
           : post
       )
     );
@@ -120,8 +104,8 @@ export default function ProfilePage() {
   const handleShare = (postId: string) => {
     setUserPosts(prevPosts =>
       prevPosts.map(post =>
-        post.id === postId
-          ? { ...post, shares: post.shares + 1 }
+        post._id === postId
+          ? { ...post, shares: (post as any).shares + 1 }
           : post
       )
     );
@@ -278,11 +262,11 @@ export default function ProfilePage() {
                     <div className="space-y-6">
                       {userPosts.map((post) => (
                         <PostCard
-                          key={post.id}
+                          key={post._id}
                           post={post}
-                          author={user}
-                          onLike={() => handleLike(post.id)}
-                          onShare={() => handleShare(post.id)}
+                          author={user as any}
+                          onLike={() => handleLike(post._id)}
+                          onShare={() => handleShare(post._id)}
                         />
                       ))}
                     </div>

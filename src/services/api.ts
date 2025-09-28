@@ -1,22 +1,7 @@
-// API servisleri
-const API_BASE_URL = '/data';
-
-export interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  authorId: string;
-  category: string;
-  tags: string[];
-  image?: string;
-  publishDate: string;
-  likes: number;
-  shares: number;
-  comments: number;
-  readTime: number;
-  views: number;
-}
+// API servisleri - Modern axios yaklaşımı
+import { api, publicApi, handleApiError } from '@/lib/axios';
+import { Post, CreatePostData, UpdatePostData, PostFilters, PostsResponse } from './posts';
+import { Comment, CreateCommentData, UpdateCommentData, CommentFilters, CommentsResponse } from './comments';
 
 export interface User {
   id: string;
@@ -45,15 +30,7 @@ export interface Expert extends User {
   consultationFee: number;
 }
 
-export interface Comment {
-  id: string;
-  postId: string;
-  authorId: string;
-  content: string;
-  createdAt: string;
-  likes: number;
-  replies?: Comment[];
-}
+// Comment interface'i artık comments.ts'den import ediliyor
 
 export interface Event {
   id: string;
@@ -73,115 +50,385 @@ export interface Event {
   createdAt: string;
 }
 
-export interface Question {
-  id: string;
-  title: string;
-  content: string;
-  authorId: string;
-  category: string;
-  tags: string[];
-  createdAt: string;
-  answersCount: number;
-  views: number;
-  isResolved: boolean;
-}
+// Question interface'i artık Post ile değiştirildi
+// Post interface'i posts.ts'den import ediliyor
 
-// API fonksiyonları
-export const api = {
-  // Posts
-  async getPosts(): Promise<Post[]> {
-    const response = await fetch(`${API_BASE_URL}/posts.json`);
-    return response.json();
+// API fonksiyonları - Modern axios yaklaşımı
+export const apiService = {
+  // Posts - Yeni API yapısına göre güncellendi
+  async getPosts(filters: PostFilters = {}): Promise<PostsResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.category) params.append('category', filters.category);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (filters.search) params.append('search', filters.search);
+
+      return await api.get<PostsResponse>(`/api/posts?${params.toString()}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  async getPost(slug: string): Promise<Post | null> {
-    const posts = await this.getPosts();
-    return posts.find(post => post.slug === slug) || null;
+  async getPost(postId: string): Promise<Post> {
+    try {
+      return await api.get<Post>(`/api/posts/${postId}`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Post bulunamadı');
+      }
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  async getPostsByCategory(category: string): Promise<Post[]> {
-    const posts = await this.getPosts();
-    return posts.filter(post => post.category === category);
+  async getPostsByCategory(category: string, filters: PostFilters = {}): Promise<PostsResponse> {
+    try {
+      const categoryFilters = { ...filters, category };
+      return await this.getPosts(categoryFilters);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  async getPostsByAuthor(authorId: string): Promise<Post[]> {
-    const posts = await this.getPosts();
-    return posts.filter(post => post.authorId === authorId);
+  async getPostsByAuthor(authorId: string, filters: PostFilters = {}): Promise<PostsResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.category) params.append('category', filters.category);
+
+      return await api.get<PostsResponse>(`/api/posts/user/${authorId}?${params.toString()}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async createPost(postData: CreatePostData): Promise<Post> {
+    try {
+      return await api.post<Post>('/api/posts', postData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async updatePost(postId: string, postData: UpdatePostData): Promise<Post> {
+    try {
+      return await api.put<Post>(`/api/posts/${postId}`, postData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async deletePost(postId: string): Promise<void> {
+    try {
+      await api.delete(`/api/posts/${postId}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
   // Users
   async getUsers(): Promise<User[]> {
-    const response = await fetch(`${API_BASE_URL}/users.json`);
-    return response.json();
+    try {
+      return await api.get<User[]>('/api/users');
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
   async getUser(username: string): Promise<User | null> {
-    const users = await this.getUsers();
-    return users.find(user => user.username === username) || null;
+    try {
+      return await api.get<User>(`/api/users/${username}`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  // Experts
+  // Experts - Artık expertsService kullanılıyor
   async getExperts(): Promise<Expert[]> {
-    const response = await fetch(`${API_BASE_URL}/experts.json`);
-    return response.json();
+    try {
+      return await api.get<Expert[]>('/api/users/experts');
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
   async getExpert(username: string): Promise<Expert | null> {
-    const experts = await this.getExperts();
-    return experts.find(expert => expert.username === username) || null;
+    try {
+      return await api.get<Expert>(`/api/users/experts/${username}`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  // Comments
+  // Comments - Yeni API yapısına göre güncellendi
   async getComments(): Promise<Comment[]> {
-    const response = await fetch(`${API_BASE_URL}/comments.json`);
-    return response.json();
+    try {
+      return await api.get<Comment[]>('/api/comments');
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  async getCommentsByPost(postId: string): Promise<Comment[]> {
-    const comments = await this.getComments();
-    return comments.filter(comment => comment.postId === postId);
+  async getCommentsByPost(postId: string, filters: CommentFilters = {}): Promise<CommentsResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+      return await api.get<CommentsResponse>(`/api/comments/${postId}?${params.toString()}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async createComment(postId: string, commentData: CreateCommentData): Promise<Comment> {
+    try {
+      return await api.post<Comment>(`/api/comments/${postId}`, commentData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async updateComment(commentId: string, commentData: UpdateCommentData): Promise<Comment> {
+    try {
+      return await api.put<Comment>(`/api/comments/${commentId}`, commentData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async deleteComment(commentId: string): Promise<void> {
+    try {
+      await api.delete(`/api/comments/${commentId}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
   // Events
   async getEvents(): Promise<Event[]> {
-    const response = await fetch(`${API_BASE_URL}/events.json`);
-    return response.json();
+    try {
+      return await api.get<Event[]>('/api/events');
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
   async getEvent(id: string): Promise<Event | null> {
-    const events = await this.getEvents();
-    return events.find(event => event.id === id) || null;
+    try {
+      return await api.get<Event>(`/api/events/${id}`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  // Questions
-  async getQuestions(): Promise<Question[]> {
-    const response = await fetch(`${API_BASE_URL}/questions.json`);
-    return response.json();
+  async createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'currentParticipants'>): Promise<Event> {
+    try {
+      return await api.post<Event>('/api/events', eventData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  async getQuestion(id: string): Promise<Question | null> {
-    const questions = await this.getQuestions();
-    return questions.find(question => question.id === id) || null;
+  async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
+    try {
+      return await api.put<Event>(`/api/events/${id}`, eventData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
-  // Search
-  async searchPosts(query: string): Promise<Post[]> {
-    const posts = await this.getPosts();
-    const lowercaseQuery = query.toLowerCase();
-    return posts.filter(post => 
-      post.title.toLowerCase().includes(lowercaseQuery) ||
-      post.content.toLowerCase().includes(lowercaseQuery) ||
-      post.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))
-    );
+  async deleteEvent(id: string): Promise<void> {
+    try {
+      await api.delete(`/api/events/${id}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async joinEvent(id: string): Promise<void> {
+    try {
+      await api.post(`/api/events/${id}/join`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async leaveEvent(id: string): Promise<void> {
+    try {
+      await api.post(`/api/events/${id}/leave`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Questions - Artık Posts olarak çalışıyor
+  async getQuestions(filters: PostFilters = {}): Promise<PostsResponse> {
+    try {
+      // Questions artık Posts API'sini kullanıyor
+      return await this.getPosts(filters);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async getQuestion(id: string): Promise<Post> {
+    try {
+      // Question artık Post olarak çalışıyor
+      return await this.getPost(id);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Soru bulunamadı');
+      }
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async createQuestion(questionData: CreatePostData): Promise<Post> {
+    try {
+      // Question oluşturma artık Post oluşturma olarak çalışıyor
+      return await this.createPost(questionData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async updateQuestion(id: string, questionData: UpdatePostData): Promise<Post> {
+    try {
+      // Question güncelleme artık Post güncelleme olarak çalışıyor
+      return await this.updatePost(id, questionData);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async deleteQuestion(id: string): Promise<void> {
+    try {
+      // Question silme artık Post silme olarak çalışıyor
+      await this.deletePost(id);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Search - Yeni API yapısına göre güncellendi
+  async searchPosts(query: string, filters: PostFilters = {}): Promise<PostsResponse> {
+    try {
+      const searchFilters = { ...filters, search: query };
+      return await this.getPosts(searchFilters);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   },
 
   async searchExperts(query: string): Promise<Expert[]> {
-    const experts = await this.getExperts();
-    const lowercaseQuery = query.toLowerCase();
-    return experts.filter(expert => 
-      expert.name.toLowerCase().includes(lowercaseQuery) ||
-      expert.specialty.toLowerCase().includes(lowercaseQuery) ||
-      expert.bio.toLowerCase().includes(lowercaseQuery)
-    );
+    try {
+      return await api.get<Expert[]>(`/api/users/experts?search=${encodeURIComponent(query)}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async searchQuestions(query: string, filters: PostFilters = {}): Promise<PostsResponse> {
+    try {
+      // Questions artık Posts olarak çalışıyor
+      return await this.searchPosts(query, filters);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async searchEvents(query: string): Promise<Event[]> {
+    try {
+      return await api.get<Event[]>(`/api/search/events?q=${encodeURIComponent(query)}`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Like/Unlike - Yeni API yapısına göre güncellendi
+  async likePost(postId: string): Promise<{ isLiked: boolean; likesCount: number }> {
+    try {
+      return await api.post(`/api/posts/${postId}/like`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async dislikePost(postId: string): Promise<{ isDisliked: boolean; dislikesCount: number }> {
+    try {
+      return await api.post(`/api/posts/${postId}/dislike`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async likeComment(commentId: string): Promise<{ isLiked: boolean; likesCount: number }> {
+    try {
+      return await api.post(`/api/comments/${commentId}/like`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
+  },
+
+  async dislikeComment(commentId: string): Promise<{ isDisliked: boolean; dislikesCount: number }> {
+    try {
+      return await api.post(`/api/comments/${commentId}/dislike`);
+    } catch (error: any) {
+      const errorMessage = handleApiError(error);
+      throw new Error(errorMessage);
+    }
   }
 }; 

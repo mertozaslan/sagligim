@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Tag from './ui/Tag';
-import type { Post } from '@/services/api';
+import type { Post } from '@/services/posts';
 
 interface PopularTopicsProps {
   posts: Post[];
@@ -77,7 +77,7 @@ const PopularTopics: React.FC<PopularTopicsProps> = ({
             const postCount = posts.filter(p => p.tags.includes(topic)).length;
             const isTop = index < 2;
             return (
-              <Link key={topic} href={`/kesfet?tag=${topic}`}>
+              <Link key={topic} href={`/blogs?tag=${topic}`}>
                 <div className={`relative group flex items-center justify-between p-4 rounded-xl transition-all duration-300 cursor-pointer ${
                   isTop 
                     ? 'bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 hover:shadow-lg hover:scale-105' 

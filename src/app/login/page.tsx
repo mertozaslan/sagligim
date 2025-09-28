@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
+import { authService, LoginData } from '@/services/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,18 +30,37 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Dummy giriş işlemi - gerçek uygulamada API çağrısı yapılır
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Başarılı giriş simülasyonu
-      if (formData.email && formData.password) {
-        alert('Giriş başarılı! Ana sayfaya yönlendiriliyorsunuz...');
-        router.push('/');
-      } else {
+      // Validasyon
+      if (!formData.email || !formData.password) {
         setError('E-posta ve şifre alanları gereklidir.');
+        return;
       }
-    } catch {
-      setError('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
+
+      // API ile giriş yap
+      const loginData: LoginData = {
+        email: formData.email,
+        password: formData.password
+      };
+
+      const response = await authService.login(loginData);
+      
+      // Başarılı giriş
+      console.log('Giriş başarılı:', response);
+      
+      // Admin kontrolü (demo için)
+      if (formData.email === 'admin@sagligim.com') {
+        localStorage.setItem('isAdmin', 'true');
+      }
+      
+      // Auth değişikliği event'ini dispatch et
+      window.dispatchEvent(new CustomEvent('authChange'));
+      
+      // Ana sayfaya yönlendir
+      router.push('/');
+      
+    } catch (error: any) {
+      console.error('Giriş hatası:', error);
+      setError(error.message || 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +75,7 @@ export default function LoginPage() {
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">S</span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">Sağlığım</span>
+            <span className="text-2xl font-bold text-gray-900">Sağlık Hep</span>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Hesabınıza giriş yapın
@@ -154,6 +174,9 @@ export default function LoginPage() {
             <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Hesaplar</h3>
             <div className="space-y-2 text-sm text-blue-800">
               <div>
+                <strong>Admin:</strong> admin@sagligim.com / 123456
+              </div>
+              <div>
                 <strong>Uzman:</strong> uzman@sagligim.com / 123456
               </div>
               <div>
@@ -203,7 +226,7 @@ export default function LoginPage() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Hesabınız yok mu?{' '}
-              <Link href="/kayit" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
                 Hemen kayıt olun
               </Link>
             </p>

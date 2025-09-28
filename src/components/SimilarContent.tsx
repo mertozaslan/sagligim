@@ -2,13 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import Avatar from './ui/Avatar';
 import Badge from './ui/Badge';
-import type { Post, Question, User, Expert } from '@/services/api';
+import type { Post } from '@/services/posts';
+import type { User, Expert } from '@/services/api';
 
 interface SimilarContentProps {
   title: string;
   subtitle: string;
   icon: string;
-  items: (Post | Question)[];
+  items: Post[];
   authors: (User | Expert)[];
   type: 'posts' | 'questions';
   getTimeAgo: (date: string) => string;
@@ -36,51 +37,31 @@ const SimilarContent: React.FC<SimilarContentProps> = ({
   getTimeAgo,
   gradientColors
 }) => {
-  const getAuthorById = (authorId: string): User | Expert | null => {
-    return authors.find(author => author.id === authorId) || null;
+  // Author bilgisi artık item içinde geliyor, ayrı aramaya gerek yok
+  const getAuthor = (item: Post) => {
+    return (item as any).author || null;
   };
 
-  const getItemUrl = (item: Post | Question): string => {
-    if (type === 'posts') {
-      return `/makale/${(item as Post).slug}`;
-    }
-    return `/sorular/${item.id}`;
+  const getItemUrl = (item: Post): string => {
+    return `/makale/${(item as Post)._id}`;
   };
 
-  const getItemStatus = (item: Post | Question) => {
-    if (type === 'posts') {
-      const post = item as Post;
-      return {
-        hasActivity: post.likes > 10,
-        label: post.likes > 10 ? '🔥 Popüler' : '📖 Yeni',
-        activityCount: post.likes
-      };
-    } else {
-      const question = item as Question;
-      return {
-        hasActivity: question.answersCount > 0,
-        label: question.answersCount > 0 ? '💬 Aktif' : '👀 Yeni',
-        activityCount: question.answersCount
-      };
-    }
+  const getItemStatus = (item: Post) => {
+    const post = item as any;
+    return {
+      hasActivity: (post.likesCount || 0) > 10,
+      label: (post.likesCount || 0) > 10 ? '🔥 Popüler' : '📖 Yeni',
+      activityCount: post.likesCount || 0
+    };
   };
 
-  const getItemMetrics = (item: Post | Question) => {
-    if (type === 'posts') {
-      const post = item as Post;
-      return {
-        metric1: { icon: '⏱️', value: `${post.readTime} dk` },
-        metric2: { icon: '❤️', value: post.likes },
-        badge: post.category
-      };
-    } else {
-      const question = item as Question;
-      return {
-        metric1: { icon: '👀', value: question.views },
-        metric2: { icon: '💬', value: question.answersCount },
-        badge: `${question.answersCount} etkileşim`
-      };
-    }
+  const getItemMetrics = (item: Post) => {
+    const post = item as any;
+    return {
+      metric1: { icon: '⏱️', value: `${Math.ceil(post.content?.length / 200) || 5} dk` },
+      metric2: { icon: '❤️', value: post.likesCount || 0 },
+      badge: post.category || 'Genel'
+    };
   };
 
   if (items.length === 0) return null;
@@ -104,15 +85,15 @@ const SimilarContent: React.FC<SimilarContentProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {items.map((item, index) => {
-              const author = getAuthorById(item.authorId);
+              const author = getAuthor(item);
               if (!author) return null;
 
               const status = getItemStatus(item);
               const metrics = getItemMetrics(item);
-              const publishDate = type === 'posts' ? (item as Post).publishDate : (item as Question).createdAt;
+              const publishDate = (item as any).createdAt;
 
               return (
-                <div key={item.id} className="group relative">
+                <div key={(item as any)._id} className="group relative">
                   <div className="relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100">
 
 
@@ -125,8 +106,8 @@ const SimilarContent: React.FC<SimilarContentProps> = ({
                       <div className="flex items-center space-x-3 mb-4">
                         <div className="relative">
                           <Avatar
-                            src={author.avatar}
-                            alt={author.name}
+                            src={author.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
+                            alt={author.firstName + ' ' + author.lastName}
                             size="sm"
                             className="ring-2 ring-white shadow-md"
                           />
@@ -139,7 +120,7 @@ const SimilarContent: React.FC<SimilarContentProps> = ({
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{author.name}</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">{(author as any).firstName} {(author as any).lastName}</p>
                           <p className="text-xs text-gray-500">{getTimeAgo(publishDate)}</p>
                         </div>
                         <div className="w-6 h-6 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
@@ -158,13 +139,13 @@ const SimilarContent: React.FC<SimilarContentProps> = ({
 
                       {/* Title */}
                       <Link href={getItemUrl(item)}>
-                        <h3 className="font-bold text-lg text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+                        <h3 className="font-bold text-lg text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight min-h-[3.5rem] flex items-start">
                           {item.title}
                         </h3>
                       </Link>
 
                       {/* Excerpt */}
-                      <p className="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed">
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed min-h-[4.5rem] flex items-start">
                         {item.content.substring(0, 120)}...
                       </p>
 

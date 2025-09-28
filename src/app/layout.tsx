@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Sağlığım - Sağlık Profesyonelleri Sosyal Ağı",
+  title: "Sağlık Hep - Sağlık Profesyonelleri Sosyal Ağı",
   description: "Sağlık uzmanları ve hastalar için güvenilir bilgi paylaşım platformu. Uzmanlarla bağlantı kurun, sorularınızı sorun ve sağlıklı yaşamı destekleyin.",
   keywords: "sağlık, doktor, diyetisyen, fizyoterapist, psikolog, tıbbi bilgi, sağlık danışmanı",
 };

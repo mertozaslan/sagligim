@@ -1,11 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
-    'Sağlığım': [
+    'Sağlık Hep': [
       { name: 'Hakkımızda', href: '/hakkimizda' },
       { name: 'İletişim', href: '/iletisim' },
       { name: 'Blog', href: '/blog' },
@@ -28,11 +29,16 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo ve Açıklama */}
           <div className="col-span-1">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
+            <div className="flex items-center mb-4">
+              <div className="relative h-20">
+                <Image
+                  src="/logoSaglik.png"
+                  alt="Sağlığım Logo"
+                  width={240}
+                  height={131}
+                  className="object-contain h-20 w-auto"
+                />
               </div>
-              <span className="text-xl font-bold text-gray-900">Sağlığım</span>
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
               Sağlık profesyonelleri ve hastalar için güvenilir bilgi paylaşım platformu. 
@@ -95,7 +101,7 @@ const Footer: React.FC = () => {
         <div className="mt-8 pt-8 border-t border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 text-sm">
-              © {currentYear} Sağlığım. Tüm hakları saklıdır.
+              © {currentYear} Sağlık Hep. Tüm hakları saklıdır.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
               <Link href="/kullanim-sartlari" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">

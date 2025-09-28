@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import Avatar from './ui/Avatar';
 import Button from './ui/Button';
-import type { Comment, User, Expert } from '@/services/api';
-
-type CommentAuthor = User | Expert;
+import type { Comment } from '@/services/comments';
 
 interface CommentBoxProps {
   comments: Comment[];
-  authors: CommentAuthor[];
+  authors: any[]; // Artık kullanılmıyor, author bilgisi comment içinde
+  postType: 'Post' | 'Blog';
   onAddComment?: (content: string) => void;
   onLikeComment?: (commentId: string) => void;
 }
@@ -15,15 +14,15 @@ interface CommentBoxProps {
 const CommentBox: React.FC<CommentBoxProps> = ({
   comments,
   authors,
+  postType,
   onAddComment,
   onLikeComment,
 }) => {
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
 
-  const getAuthorById = (authorId: string) => {
-    return authors.find(author => author.id === authorId);
-  };
+  // Author bilgisi artık comment içinde geliyor
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -58,6 +57,10 @@ const CommentBox: React.FC<CommentBoxProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  // Yorumları filtrele - ilk 5 tanesini göster veya hepsini
+  const displayedComments = showAllComments ? comments : comments.slice(0, 5);
+  const hasMoreComments = comments.length > 5;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -110,29 +113,23 @@ const CommentBox: React.FC<CommentBoxProps> = ({
               <p className="text-gray-500">Henüz yorum yapılmamış. İlk yorumu siz yapın!</p>
             </div>
           ) : (
-            comments.map((comment) => {
-              const author = getAuthorById(comment.authorId);
+            displayedComments.map((comment) => {
+              const author = comment.author;
               if (!author) return null;
 
               return (
-                <div key={comment.id} className="flex space-x-4">
+                <div key={comment._id} className="flex space-x-4">
                   <Avatar
-                    src={author.avatar}
-                    alt={author.name}
+                    src={author.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
+                    alt={`${author.firstName} ${author.lastName}`}
                     size="sm"
                   />
                   <div className="flex-1">
                     <div className="bg-gray-50 rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className="font-medium text-gray-900 text-sm">
-                          {author.name}
+                          {comment.isAnonymous ? 'Anonim Kullanıcı' : `${author.firstName} ${author.lastName}`}
                         </span>
-                        {author.verified && (
-                          <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        <span className="text-xs text-gray-500">{author.title}</span>
                         <span className="text-xs text-gray-400">•</span>
                         <span className="text-xs text-gray-500">
                           {formatDate(comment.createdAt)}
@@ -144,13 +141,13 @@ const CommentBox: React.FC<CommentBoxProps> = ({
                     </div>
                     <div className="flex items-center space-x-4 mt-2">
                       <button
-                        onClick={() => onLikeComment?.(comment.id)}
+                        onClick={() => onLikeComment?.(comment._id)}
                         className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors text-sm"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.60L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                         </svg>
-                        <span>{comment.likes > 0 && comment.likes}</span>
+                        <span>{comment.likesCount > 0 && comment.likesCount}</span>
                       </button>
                       <button className="text-gray-500 hover:text-blue-500 transition-colors text-sm">
                         Yanıtla
@@ -163,11 +160,25 @@ const CommentBox: React.FC<CommentBoxProps> = ({
           )}
         </div>
 
-        {/* Daha Fazla Yorum Yükle */}
-        {comments.length > 0 && (
+        {/* Daha Fazla Yorum Göster/Gizle */}
+        {hasMoreComments && (
           <div className="text-center mt-8">
-            <Button variant="outline" size="sm">
-              Daha Fazla Yorum Yükle
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowAllComments(!showAllComments)}
+            >
+              {showAllComments ? (
+                <>
+                  <span className="mr-2">👆</span>
+                  Daha Az Göster
+                </>
+              ) : (
+                <>
+                  <span className="mr-2">👇</span>
+                  Daha Fazla Yorum Göster ({comments.length - 5} daha)
+                </>
+              )}
             </Button>
           </div>
         )}

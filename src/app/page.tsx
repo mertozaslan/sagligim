@@ -38,19 +38,19 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                <Link href="/kayit">
+                <Link href="/register">
                   <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
                     <span className="mr-2">🚀</span>
                     Hemen Katılın
                   </Button>
                 </Link>
-                <Link href="/sorular">
+                <Link href="/posts">
                   <Button variant="outline" size="lg" className="border-2 border-gray-300 text-gray-700 hover:border-blue-600 hover:text-blue-600 transition-all duration-200">
                     <span className="mr-2">💬</span>
                     Toplulukla Tanışın
                   </Button>
                 </Link>
-                <Link href="/kesfet">
+                <Link href="/blogs">
                   <Button variant="outline" size="lg" className="border-2 border-gray-300 text-gray-700 hover:border-purple-600 hover:text-purple-600 transition-all duration-200">
                     <span className="mr-2">🔍</span>
                     İçerikleri Keşfedin
@@ -230,7 +230,7 @@ export default function Home() {
                     Destek grupları
                   </div>
                 </div>
-                <Link href="/sorular">
+                <Link href="/posts">
                   <Button className="bg-gradient-to-r from-teal-500 to-teal-600 text-white group-hover:shadow-lg">
                     Topluluğa Katıl
                   </Button>
@@ -264,7 +264,7 @@ export default function Home() {
                     Günlük güncellemeler
                   </div>
                 </div>
-                <Link href="/kesfet">
+                <Link href="/blogs">
                   <Button className="bg-gradient-to-r from-purple-500 to-purple-600 text-white group-hover:shadow-lg">
                     Keşfetmeye Başla
                   </Button>
@@ -298,7 +298,7 @@ export default function Home() {
                     Sertifika programları
                   </div>
                 </div>
-                <Link href="/etkinlikler">
+                <Link href="/events">
                   <Button className="bg-gradient-to-r from-green-500 to-green-600 text-white group-hover:shadow-lg">
                     Etkinlikleri Görüntüle
                   </Button>
@@ -366,7 +366,7 @@ export default function Home() {
                     Özel öneriler
                   </div>
                 </div>
-                <Link href="/kayit">
+                <Link href="/register">
                   <Button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white group-hover:shadow-lg">
                     Profili Oluştur
                   </Button>
@@ -402,7 +402,7 @@ export default function Home() {
                     Gizlilik garantisi
                   </div>
                 </div>
-                <Link href="/sorular">
+                <Link href="/posts">
                   <Button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white group-hover:shadow-lg">
                     Soru Sor
                   </Button>
@@ -446,11 +446,11 @@ export default function Home() {
             <br />Bugün Atın
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Binlerce kişi sağlık yolculuklarında Sağlığım platformunu tercih ediyor. 
+            Binlerce kişi sağlık yolculuklarında Sağlık Hep platformunu tercih ediyor. 
             Siz de katılın ve uzmanlarımızdan faydalanın.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/kayit">
+            <Link href="/register">
               <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl">
                 <span className="mr-2">🚀</span>
                 Ücretsiz Hesap Oluştur

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, Expert, api } from '../services/api';
+import { User, Expert, apiService } from '../services/api';
 
 interface UsersState {
   users: User[];
@@ -56,7 +56,7 @@ export const useUsersStore = create<UsersState & UsersActions>((set, get) => ({
   fetchUsers: async () => {
     set({ loading: true, error: null });
     try {
-      const users = await api.getUsers();
+      const users = await apiService.getUsers();
       set({ users, loading: false });
     } catch (error) {
       set({ 
@@ -69,7 +69,7 @@ export const useUsersStore = create<UsersState & UsersActions>((set, get) => ({
   fetchExperts: async () => {
     set({ loading: true, error: null });
     try {
-      const experts = await api.getExperts();
+      const experts = await apiService.getExperts();
       set({ experts, loading: false });
     } catch (error) {
       set({ 
@@ -82,7 +82,7 @@ export const useUsersStore = create<UsersState & UsersActions>((set, get) => ({
   fetchUser: async (username: string) => {
     set({ loading: true, error: null });
     try {
-      const user = await api.getUser(username);
+      const user = await apiService.getUser(username);
       set({ currentUser: user, loading: false });
     } catch (error) {
       set({ 
@@ -95,7 +95,7 @@ export const useUsersStore = create<UsersState & UsersActions>((set, get) => ({
   fetchExpert: async (username: string) => {
     set({ loading: true, error: null });
     try {
-      const expert = await api.getExpert(username);
+      const expert = await apiService.getExpert(username);
       set({ currentUser: expert, loading: false });
     } catch (error) {
       set({ 
@@ -108,7 +108,7 @@ export const useUsersStore = create<UsersState & UsersActions>((set, get) => ({
   searchExperts: async (query: string) => {
     set({ loading: true, error: null });
     try {
-      const experts = await api.searchExperts(query);
+      const experts = await apiService.searchExperts(query);
       set({ experts, loading: false });
     } catch (error) {
       set({ 

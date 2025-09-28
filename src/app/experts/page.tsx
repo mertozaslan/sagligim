@@ -3,91 +3,64 @@
 import React, { useState, useEffect } from 'react';
 import UserCard from '@/components/UserCard';
 import Button from '@/components/ui/Button';
-
-interface Expert {
-  id: string;
-  username: string;
-  name: string;
-  avatar: string;
-  specialty: string;
-  title: string;
-  city: string;
-  shortBio: string;
-  followersCount: number;
-  rating: number;
-  experience: number;
-  verified: boolean;
-}
+import { useExpertsStore } from '@/stores/expertsStore';
 
 export default function ExpertsPage() {
-  const [experts, setExperts] = useState<Expert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    experts,
+    pagination,
+    stats,
+    isLoading,
+    isLoadingMore,
+    error,
+    fetchExperts,
+    loadMoreExperts,
+    updateFilters,
+    clearFilters
+  } = useExpertsStore();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
-  const [selectedCity, setSelectedCity] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('rating');
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [selectedHospital, setSelectedHospital] = useState<string>('');
 
+  // Sayfa yüklendiğinde uzmanları getir
   useEffect(() => {
-    const loadExperts = async () => {
-      try {
-        const response = await fetch('/data/experts.json');
-        const data = await response.json();
-        setExperts(data);
-      } catch (error) {
-        console.error('Uzman verileri yüklenirken hata:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadExperts();
+    fetchExperts();
   }, []);
 
-  // Filtreler
-  const specialties = Array.from(new Set(experts.map(expert => expert.specialty)));
-  const cities = Array.from(new Set(experts.map(expert => expert.city)));
+  // Arama değiştiğinde debounce ile API çağrısı yap
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      updateFilters({
+        search: searchTerm || undefined,
+        specialization: selectedSpecialty || undefined,
+        location: selectedLocation || undefined,
+        hospital: selectedHospital || undefined,
+      });
+    }, 500);
 
-  // Filtrelenmiş ve sıralanmış uzmanlar
-  const filteredExperts = experts
-    .filter(expert => {
-      const matchesSearch = expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           expert.specialty.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSpecialty = !selectedSpecialty || expert.specialty === selectedSpecialty;
-      const matchesCity = !selectedCity || expert.city === selectedCity;
-      
-      return matchesSearch && matchesSpecialty && matchesCity;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'rating':
-          return b.rating - a.rating;
-        case 'experience':
-          return b.experience - a.experience;
-        case 'followers':
-          return b.followersCount - a.followersCount;
-        case 'name':
-          return a.name.localeCompare(b.name, 'tr');
-        default:
-          return 0;
-      }
-    });
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedSpecialty, selectedLocation, selectedHospital]);
 
-  const handleFollow = (expertId: string) => {
-    setExperts(prevExperts =>
-      prevExperts.map(expert =>
-        expert.id === expertId
-          ? { ...expert, followersCount: expert.followersCount + 1 }
-          : expert
-      )
-    );
+  // Filtreler için seçenekler
+  const specialties = stats?.specializationStats.map(s => s.specialization) || [];
+  const locations = stats?.locationStats.map(l => l.location) || [];
+
+
+  const handleLoadMore = () => {
+    loadMoreExperts();
   };
 
-  const handleMessage = (expertId: string) => {
-    // Mesaj gönderme işlevi (dummy)
-    alert(`${experts.find(e => e.id === expertId)?.name} ile mesajlaşma başlatıldı!`);
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setSelectedSpecialty('');
+    setSelectedLocation('');
+    setSelectedHospital('');
+    clearFilters();
   };
 
-  if (loading) {
+  if (isLoading && experts.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -151,19 +124,19 @@ export default function ExpertsPage() {
               </div>
             </div>
 
-            {/* Şehir Filtresi */}
+            {/* Lokasyon Filtresi */}
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Şehir</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Lokasyon</label>
               <div className="relative">
                 <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 appearance-none bg-white"
                 >
-                  <option value="">Tüm Şehirler</option>
-                  {cities.map(city => (
-                    <option key={city} value={city}>
-                      {city}
+                  <option value="">Tüm Lokasyonlar</option>
+                  {locations.map(location => (
+                    <option key={location} value={location}>
+                      {location}
                     </option>
                   ))}
                 </select>
@@ -173,23 +146,17 @@ export default function ExpertsPage() {
               </div>
             </div>
 
-            {/* Sıralama */}
+            {/* Hastane Filtresi */}
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sırala</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Hastane</label>
               <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 appearance-none bg-white"
-                >
-                  <option value="rating">Puana Göre</option>
-                  <option value="experience">Deneyime Göre</option>
-                  <option value="followers">Takipçiye Göre</option>
-                  <option value="name">İsme Göre</option>
-                </select>
-                <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <input
+                  type="text"
+                  placeholder="Hastane ara..."
+                  value={selectedHospital}
+                  onChange={(e) => setSelectedHospital(e.target.value)}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                />
               </div>
             </div>
 
@@ -197,12 +164,7 @@ export default function ExpertsPage() {
             <div className="lg:col-span-1 flex items-end">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedSpecialty('');
-                  setSelectedCity('');
-                  setSortBy('rating');
-                }}
+                onClick={handleResetFilters}
                 className="w-full h-12"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,13 +181,25 @@ export default function ExpertsPage() {
       <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Sonuç Başlığı ve Sayısı */}
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex">
+                <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
             <div className="mb-4 sm:mb-0">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                {filteredExperts.length > 0 ? 'Uzman Sonuçları' : 'Sonuç Bulunamadı'}
+                {experts.length > 0 ? 'Uzman Sonuçları' : 'Sonuç Bulunamadı'}
               </h3>
               <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                <span className="font-medium">{filteredExperts.length} uzman bulundu</span>
+                <span className="font-medium">{pagination?.totalExperts || experts.length} uzman bulundu</span>
                 {searchTerm && (
                   <div className="flex items-center">
                     <span className="mx-2">•</span>
@@ -242,33 +216,34 @@ export default function ExpertsPage() {
                     </span>
                   </div>
                 )}
-                {selectedCity && (
+                {selectedLocation && (
                   <div className="flex items-center">
                     <span className="mx-2">•</span>
                     <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-                      {selectedCity}
+                      {selectedLocation}
+                    </span>
+                  </div>
+                )}
+                {selectedHospital && (
+                  <div className="flex items-center">
+                    <span className="mx-2">•</span>
+                    <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                      {selectedHospital}
                     </span>
                   </div>
                 )}
               </div>
             </div>
             
-            {filteredExperts.length > 0 && (
+            {pagination && (
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-                <span>Sıralama: {
-                  sortBy === 'rating' ? 'Puan' :
-                  sortBy === 'experience' ? 'Deneyim' :
-                  sortBy === 'followers' ? 'Takipçi' : 'İsim'
-                }</span>
+                <span>Sayfa {pagination.currentPage} / {pagination.totalPages}</span>
               </div>
             )}
           </div>
 
           {/* Uzman Kartları */}
-          {filteredExperts.length === 0 ? (
+          {experts.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-sm">
               <div className="max-w-md mx-auto">
                 <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
@@ -284,12 +259,7 @@ export default function ExpertsPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedSpecialty('');
-                      setSelectedCity('');
-                      setSortBy('rating');
-                    }}
+                    onClick={handleResetFilters}
                     className="flex items-center justify-center"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,17 +274,52 @@ export default function ExpertsPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredExperts.map((expert) => (
-                <div key={expert.id} className="transform transition-transform duration-200 hover:scale-105">
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {experts.map((expert) => (
+                  <div key={expert._id} className="transform transition-transform duration-200 hover:scale-105">
                   <UserCard
-                    user={expert}
-                    onFollow={() => handleFollow(expert.id)}
-                    onMessage={() => handleMessage(expert.id)}
+                    user={{
+                      id: expert._id,
+                      username: expert.username,
+                      name: `Dr. ${expert.firstName} ${expert.lastName}`,
+                      avatar: expert.profilePicture || '/default-avatar.png',
+                      specialty: expert.doctorInfo.specialization,
+                      title: expert.doctorInfo.specialization,
+                      city: expert.doctorInfo.location,
+                      shortBio: expert.bio || `${expert.doctorInfo.specialization} uzmanı`,
+                      followersCount: 0, // API'de yok, placeholder
+                      rating: 0, // API'de yok, placeholder
+                      experience: expert.doctorInfo.experience,
+                      verified: expert.isVerified && expert.doctorInfo.approvalStatus === 'approved'
+                    }}
                   />
+                  </div>
+                ))}
+              </div>
+
+              {/* Load More Button */}
+              {pagination?.hasNext && (
+                <div className="mt-12 text-center">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    variant="outline"
+                    size="lg"
+                    className="px-8"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        Yükleniyor...
+                      </>
+                    ) : (
+                      'Daha Fazla Uzman Yükle'
+                    )}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -336,7 +341,7 @@ export default function ExpertsPage() {
                 <span className="text-blue-200"> mısınız?</span>
               </h2>
               <p className="text-xl text-blue-100 mb-8 leading-relaxed">
-                Sağlığım platformuna katılın ve binlerce kişiye ulaşın. 
+                Sağlık Hep platformuna katılın ve binlerce kişiye ulaşın. 
                 Bilginizi paylaşın, sorulara cevap verin ve kariyerinizi büyütün.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center">

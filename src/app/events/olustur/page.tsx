@@ -5,34 +5,20 @@ import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { isAdmin } from '@/utils/auth';
+import { useEventsStore } from '@/stores';
+import type { CreateEventData } from '@/services/events';
 
-interface EventFormData {
-  title: string;
-  description: string;
-  category: string;
-  instructor: string;
-  instructorTitle: string;
-  date: string;
-  endDate: string;
-  location: string;
-  locationAddress: string;
-  maxParticipants: number;
-  price: number;
-  isOnline: boolean;
-  organizer: string;
-  organizerType: string;
-  tags: string[];
-  requirements: string;
-}
+// EventFormData artık CreateEventData olarak import ediliyor
 
 const CreateEventPage: React.FC = () => {
   const router = useRouter();
+  const { createEvent, loading: storeLoading } = useEventsStore();
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
 
-  const [formData, setFormData] = useState<EventFormData>({
+  const [formData, setFormData] = useState<CreateEventData>({
     title: '',
     description: '',
     category: 'Meditasyon',
@@ -45,7 +31,7 @@ const CreateEventPage: React.FC = () => {
     maxParticipants: 20,
     price: 0,
     isOnline: false,
-    organizer: 'Sağlığım Platform',
+    organizer: 'Sağlık Hep Platform',
     organizerType: 'platform',
     tags: [],
     requirements: '',
@@ -64,7 +50,7 @@ const CreateEventPage: React.FC = () => {
   ];
 
   const organizerOptions = [
-    { value: 'Sağlığım Platform', type: 'platform', label: 'Sağlığım Platform' },
+    { value: 'Sağlık Hep Platform', type: 'platform', label: 'Sağlık Hep Platform' },
     { value: 'Sağlık Bakanlığı', type: 'government', label: 'Sağlık Bakanlığı' },
     { value: 'İstanbul Büyükşehir Belediyesi', type: 'municipal', label: 'İstanbul Büyükşehir Belediyesi' },
     { value: 'Ankara Büyükşehir Belediyesi', type: 'municipal', label: 'Ankara Büyükşehir Belediyesi' },
@@ -80,7 +66,7 @@ const CreateEventPage: React.FC = () => {
     setLoading(false);
 
     if (!adminStatus) {
-      router.push('/etkinlikler');
+      router.push('/events');
     }
   }, [router]);
 
@@ -143,7 +129,7 @@ const CreateEventPage: React.FC = () => {
 
   const validateForm = (): boolean => {
     const required = ['title', 'description', 'instructor', 'instructorTitle', 'date', 'location'];
-    return required.every(field => formData[field as keyof EventFormData]);
+    return required.every(field => formData[field as keyof CreateEventData]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,27 +153,14 @@ const CreateEventPage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      // Yeni etkinlik ID'si oluştur
-      const newEventId = Date.now().toString();
-      
-      const newEvent = {
-        id: newEventId,
-        ...formData,
-        currentParticipants: 0,
-        status: 'active',
-        authorId: 'admin', // Gerçek uygulamada kullanıcı ID'si kullanılır
-        publishDate: new Date().toISOString(),
-        image: `event-${newEventId}.jpg`
-      };
-
-      // Bu gerçek uygulamada API'ye gönderilir
-      console.log('Yeni etkinlik oluşturuldu:', newEvent);
+      // API'ye etkinlik oluşturma isteği gönder
+      await createEvent(formData);
       
       // Başarı mesajı göster
       alert('Etkinlik başarıyla oluşturuldu!');
       
       // Etkinlikler sayfasına yönlendir
-      router.push('/etkinlikler');
+      router.push('/events');
       
     } catch (error) {
       console.error('Etkinlik oluşturulurken hata:', error);
@@ -513,7 +486,7 @@ const CreateEventPage: React.FC = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push('/etkinlikler')}
+            onClick={() => router.push('/events')}
           >
             İptal
           </Button>

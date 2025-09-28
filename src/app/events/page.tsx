@@ -6,39 +6,26 @@ import EventCard from '@/components/EventCard';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { isAdmin } from '@/utils/auth';
+import { useEventsStore } from '@/stores';
+import type { Event, EventFilters } from '@/services/events';
 
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  instructor: string;
-  instructorTitle: string;
-  date: string;
-  endDate: string;
-  location: string;
-  locationAddress: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  price: number;
-  isOnline: boolean;
-  organizer: string;
-  organizerType: string;
-  tags: string[];
-  requirements: string;
-  status: string;
-  authorId: string;
-  publishDate: string;
-  image?: string;
-}
+// Event interface artık services'den import ediliyor
 
 const EventsPage: React.FC = () => {
-  const [events, setEvents] = useState<Event[]>([]);
+  // Zustand store
+  const {
+    events,
+    loading,
+    error,
+    fetchEvents,
+    registerForEvent,
+    unregisterFromEvent
+  } = useEventsStore();
+
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Tümü');
   const [selectedOrganizer, setSelectedOrganizer] = useState<string>('Tümü');
   const [isUserAdmin, setIsUserAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const categories = ['Tümü', 'Meditasyon', 'Biyoenerji', 'Beslenme', 'Yoga', 'Stres Yönetimi', 'Spor'];
   const getUniqueOrganizers = () => {
@@ -47,9 +34,15 @@ const EventsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadEvents();
+    // API'den etkinlikleri yükle
+    fetchEvents({
+      page: 1,
+      limit: 50,
+      sortBy: 'date',
+      sortOrder: 'asc'
+    });
     setIsUserAdmin(isAdmin());
-  }, []);
+  }, [fetchEvents]);
 
   const filterEvents = useCallback(() => {
     let filtered = events;
@@ -69,21 +62,24 @@ const EventsPage: React.FC = () => {
     filterEvents();
   }, [filterEvents]);
 
-  const loadEvents = async () => {
+  const handleRegister = async (eventId: string) => {
     try {
-      const response = await fetch('/data/events.json');
-      const data = await response.json();
-      setEvents(data);
+      await registerForEvent(eventId);
+      alert('Etkinliğe başarıyla kayıt oldunuz!');
     } catch (error) {
-      console.error('Etkinlikler yüklenirken hata:', error);
-    } finally {
-      setLoading(false);
+      console.error('Kayıt hatası:', error);
+      alert('Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.');
     }
   };
 
-  const handleRegister = (eventId: string) => {
-    // Burada etkinliğe kayıt işlemi yapılacak
-    alert(`Etkinlik ${eventId} için kayıt işlemi başlatıldı!`);
+  const handleUnregister = async (eventId: string) => {
+    try {
+      await unregisterFromEvent(eventId);
+      alert('Etkinlik kaydınız iptal edildi.');
+    } catch (error) {
+      console.error('Kayıt iptal hatası:', error);
+      alert('Kayıt iptal edilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
   const getCategoryVariant = (category: string) => {
@@ -159,7 +155,7 @@ const EventsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 pb-6">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
       
@@ -185,7 +181,7 @@ const EventsPage: React.FC = () => {
                     <span className="block">Sağlıklı Yaşama</span>
                     <span className="block text-yellow-300">İlk Adımını At!</span>
                   </h1>
-                  <p className="text-sm text-white/70 font-medium tracking-wider uppercase">Sağlığım Hep ile etkinliklerde</p>
+                  <p className="text-sm text-white/70 font-medium tracking-wider uppercase">Sağlık Hep ile etkinliklerde</p>
                 </div>
 
                 <p className="text-xl text-white/90 leading-relaxed max-w-lg">
@@ -413,7 +409,7 @@ const EventsPage: React.FC = () => {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredEvents.map((event, index) => (
                 <div
-                  key={event.id}
+                  key={event._id}
                   className="group transform transition-all duration-300 hover:scale-105 hover:shadow-2xl h-full"
                 >
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col">
@@ -577,20 +573,29 @@ const EventsPage: React.FC = () => {
 
                       {/* Register Button - Always at bottom */}
                       <div className="mt-auto">
-                        <button
-                          onClick={() => handleRegister(event.id)}
-                          disabled={event.currentParticipants >= event.maxParticipants}
-                          className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
-                            event.currentParticipants >= event.maxParticipants
-                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transform hover:-translate-y-1 shadow-lg hover:shadow-xl'
-                          }`}
-                        >
-                          {event.currentParticipants >= event.maxParticipants 
-                            ? '❌ Kontenjan Dolu' 
-                            : '🎯 Hemen Katıl'
-                          }
-                        </button>
+                        {event.isRegistered ? (
+                          <button
+                            onClick={() => handleUnregister(event._id)}
+                            className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 bg-red-500 text-white hover:bg-red-600 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+                          >
+                            ❌ Kaydı İptal Et
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleRegister(event._id)}
+                            disabled={event.currentParticipants >= event.maxParticipants}
+                            className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+                              event.currentParticipants >= event.maxParticipants
+                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transform hover:-translate-y-1 shadow-lg hover:shadow-xl'
+                            }`}
+                          >
+                            {event.currentParticipants >= event.maxParticipants 
+                              ? '❌ Kontenjan Dolu' 
+                              : '🎯 Hemen Katıl'
+                            }
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

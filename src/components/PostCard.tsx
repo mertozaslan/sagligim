@@ -5,7 +5,8 @@ import Avatar from './ui/Avatar';
 import Badge from './ui/Badge';
 import Tag from './ui/Tag';
 import { usePostsStore } from '../stores';
-import type { Post, User, Expert } from '../services/api';
+import type { Post } from '../services/posts';
+import type { User, Expert } from '../services/api';
 
 interface PostCardProps {
   post: Post;
@@ -20,7 +21,7 @@ const PostCard: React.FC<PostCardProps> = ({
   onLike,
   onShare,
 }) => {
-  const { likePost, sharePost } = usePostsStore();
+  const { likePost } = usePostsStore();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -39,12 +40,11 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   const handleLike = () => {
-    likePost(post.id);
+    likePost(post._id);
     onLike?.();
   };
 
   const handleShare = () => {
-    sharePost(post.id);
     onShare?.();
   };
 
@@ -56,10 +56,10 @@ const PostCard: React.FC<PostCardProps> = ({
   return (
     <article className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
       {/* Görsel */}
-      {post.image && (
+      {post.images && post.images.length > 0 && (
         <div className="relative h-48 w-full">
           <Image
-            src={post.image}
+            src={post.images[0]}
             alt={post.title}
             fill
             className="object-cover"
@@ -73,8 +73,8 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="flex items-center space-x-3 mb-4">
           <Link href={`/profil/${author.username}`}>
             <Avatar
-              src={author.avatar}
-              alt={author.name}
+              src={(author as any).profilePicture || (author as any).avatar}
+              alt={(author as any).firstName + ' ' + (author as any).lastName || (author as any).name}
               size="sm"
               className="cursor-pointer"
             />
@@ -85,20 +85,20 @@ const PostCard: React.FC<PostCardProps> = ({
                 href={`/profil/${author.username}`}
                 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
               >
-                {author.name}
+                {(author as any).firstName + ' ' + (author as any).lastName || (author as any).name}
               </Link>
-              {author.verified && (
+              {(author as any).isVerified && (
                 <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}
             </div>
-            <p className="text-xs text-gray-500">{author.title}</p>
+            <p className="text-xs text-gray-500">{(author as any).bio || (author as any).title}</p>
           </div>
           <div className="flex items-center space-x-2 text-xs text-gray-500">
-            <span>{formatDate(post.publishDate)}</span>
+            <span>{formatDate(post.createdAt)}</span>
             <span>•</span>
-            <span>{post.readTime} dk okuma</span>
+            <span>{Math.ceil(post.content.length / 200)} dk okuma</span>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
         {/* Başlık ve İçerik */}
         <div className="mb-4">
-          <Link href={`/makale/${post.slug}`}>
+          <Link href={`/makale/${post._id}`}>
             <h2 className="text-lg font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors cursor-pointer line-clamp-2">
               {post.title}
             </h2>
@@ -143,17 +143,17 @@ const PostCard: React.FC<PostCardProps> = ({
               <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span className="text-sm font-medium">{post.likes}</span>
+              <span className="text-sm font-medium">{post.likesCount}</span>
             </button>
 
             <Link 
-              href={`/makale/${post.slug}#yorumlar`}
+              href={`/makale/${post._id}#yorumlar`}
               className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <span className="text-sm font-medium">{post.comments}</span>
+              <span className="text-sm font-medium">{post.commentCount}</span>
             </Link>
 
             <button
@@ -163,12 +163,12 @@ const PostCard: React.FC<PostCardProps> = ({
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
               </svg>
-              <span className="text-sm font-medium">{post.shares}</span>
+              <span className="text-sm font-medium">{post.commentCount || 0}</span>
             </button>
           </div>
 
           <Link 
-            href={`/makale/${post.slug}`}
+            href={`/makale/${post._id}`}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
           >
             Devamını oku →

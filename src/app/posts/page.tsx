@@ -4,31 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
+import { useQuestionsStore, useEventsStore } from '@/stores';
+import { Post, CreatePostData } from '@/services/posts';
+import type { Event } from '@/services/events';
 
-interface Comment {
-  id: string;
-  postId: string;
-  authorId: string;
-  content: string;
-  publishDate: string;
-  likes: number;
-  supportive: boolean;
-}
-
-interface Post {
-  id: string;
-  title: string;
-  content: string;
-  authorId: string;
-  category: string;
-  type: 'question' | 'experience' | 'celebration' | 'support';
-  tags: string[];
-  publishDate: string;
-  views: number;
-  likes: number;
-  comments: Comment[];
-  mood?: 'happy' | 'worried' | 'hopeful' | 'grateful' | 'curious';
-}
+// Post ve Comment interface'leri artık services'den import ediliyor
 
 interface User {
   id: string;
@@ -38,41 +18,47 @@ interface User {
   verified: boolean;
 }
 
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  instructor: string;
-  instructorTitle: string;
-  date: string;
-  endDate: string;
-  location: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  price: number;
-  isOnline: boolean;
-  organizer: string;
-  tags: string[];
-}
+// Event interface artık services/events'ten import ediliyor
 
 export default function CommunityPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  // Store'dan verileri al
+  const { 
+    questions: posts, 
+    loading, 
+    error, 
+    fetchQuestions, 
+    createQuestion, 
+    likeQuestion,
+    dislikeQuestion,
+    trendCategories
+  } = useQuestionsStore();
+
+  // Events store
+  const {
+    events,
+    loading: eventsLoading,
+    error: eventsError,
+    fetchEvents
+  } = useEventsStore();
+  
   const [users, setUsers] = useState<User[]>([]);
   const [featuredEvent, setFeaturedEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   
   // Post creation state
   const [isCreateExpanded, setIsCreateExpanded] = useState(false);
-  const [newPost, setNewPost] = useState({
+  const [newPost, setNewPost] = useState<CreatePostData>({
     title: '',
     content: '',
-    type: 'question' as Post['type'],
-    category: '',
-    tags: [] as string[],
-    mood: 'hopeful' as Post['mood']
+    category: 'other',
+    tags: [],
+    images: [],
+    isAnonymous: false,
+    isSensitive: false,
+    medicalAdvice: false,
+    symptoms: [],
+    treatments: []
   });
   const [availableTags] = useState<string[]>([
     'beslenme', 'egzersiz', 'mental-sağlık', 'kalp-sağlığı', 'diyabet', 
@@ -82,82 +68,87 @@ export default function CommunityPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [questionsResponse, usersResponse, eventsResponse] = await Promise.all([
-          fetch('/data/questions.json'),
-          fetch('/data/users.json'),
-          fetch('/data/events.json')
-        ]);
-        
-        const questionsData = await questionsResponse.json();
-        const usersData = await usersResponse.json();
-        const eventsData = await eventsResponse.json();
-        
-        // Dummy data için mevcut soruları postlara dönüştür
-        const transformedPosts = questionsData.map((question: { [key: string]: unknown }) => ({
-          ...question,
-          type: Math.random() > 0.7 ? 'experience' : Math.random() > 0.5 ? 'celebration' : 'question',
-          comments: question.answers || [],
-          mood: ['happy', 'worried', 'hopeful', 'grateful', 'curious'][Math.floor(Math.random() * 5)]
-        }));
-        
-        setPosts(transformedPosts);
-        setUsers(usersData);
-        
-        // Rastgele bir etkinlik seç
-        if (eventsData.length > 0) {
-          const randomEvent = eventsData[Math.floor(Math.random() * eventsData.length)];
-          setFeaturedEvent(randomEvent);
+        // Yeni API'den soruları yükle
+        try {
+          await fetchQuestions({
+            page: 1,
+            limit: 20,
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
+          });
+        } catch (apiError) {
+          console.warn('API\'den veri yüklenemedi, fallback data kullanılıyor:', apiError);
+          // API hatası durumunda boş array ile devam et
+        }
+
+        // Users için hala dummy data kullanıyoruz, events için API
+        try {
+          // Users için JSON'dan dummy data
+          const usersResponse = await fetch('/data/users.json');
+          const usersData = await usersResponse.json();
+          setUsers(usersData);
+
+          // Events için API'den veri al
+          await fetchEvents({
+            page: 1,
+            limit: 10,
+            sortBy: 'date',
+            sortOrder: 'asc'
+          });
+        } catch (dummyError) {
+          console.warn('Dummy data yüklenemedi:', dummyError);
         }
         
       } catch (error) {
         console.error('Topluluk verileri yüklenirken hata:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [fetchQuestions, fetchEvents]);
+
+  // Featured event'i API'den gelen events'ten seç
+  useEffect(() => {
+    if (events.length > 0 && !featuredEvent) {
+      const randomEvent = events[Math.floor(Math.random() * events.length)];
+      setFeaturedEvent(randomEvent);
+    }
+  }, [events, featuredEvent]);
 
   // Kategoriler
-  const categories = Array.from(new Set(posts.map(post => post.category)));
+  const categories = Array.from(new Set(posts?.map(post => post.category) || []));
 
-  // Post tipleri
-  const postTypes = [
-    { value: 'question', label: 'Sorular', icon: '❓', color: 'blue' },
-    { value: 'experience', label: 'Deneyimler', icon: '💭', color: 'purple' },
-    { value: 'celebration', label: 'Başarı Hikayeleri', icon: '🎉', color: 'green' },
-    { value: 'support', label: 'Destek Arayışı', icon: '🤝', color: 'orange' }
+  // Post kategorileri (API'ye göre)
+  const postCategories = [
+    { value: 'diabetes', label: 'Diyabet', icon: '🩸', color: 'blue' },
+    { value: 'heart-disease', label: 'Kalp Hastalıkları', icon: '❤️', color: 'red' },
+    { value: 'cancer', label: 'Kanser', icon: '🎗️', color: 'pink' },
+    { value: 'mental-health', label: 'Ruh Sağlığı', icon: '🧠', color: 'purple' },
+    { value: 'arthritis', label: 'Artrit', icon: '🦴', color: 'orange' },
+    { value: 'asthma', label: 'Astım', icon: '🫁', color: 'cyan' },
+    { value: 'digestive', label: 'Sindirim', icon: '🫀', color: 'green' },
+    { value: 'neurological', label: 'Nörolojik', icon: '🧬', color: 'indigo' },
+    { value: 'autoimmune', label: 'Otoimmün', icon: '🛡️', color: 'yellow' },
+    { value: 'other', label: 'Diğer', icon: '💭', color: 'gray' }
   ];
 
-  // Mood iconları
-  const getMoodIcon = (mood?: string) => {
-    switch (mood) {
-      case 'happy': return '😊';
-      case 'worried': return '😟';
-      case 'hopeful': return '🌟';
-      case 'grateful': return '🙏';
-      case 'curious': return '🤔';
-      default: return '💭';
-    }
-  };
-
-  // Post type iconları
-  const getTypeIcon = (type: string) => {
-    const typeData = postTypes.find(t => t.value === type);
-    return typeData?.icon || '💭';
+  // Kategori iconları
+  const getCategoryIcon = (category: string) => {
+    const categoryData = postCategories.find(c => c.value === category);
+    return categoryData?.icon || '💭';
   };
 
 
 
   // Filtrelenmiş postlar
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = !selectedType || post.type === selectedType;
+  const filteredPosts = (posts || []).filter(post => {
+    const matchesSearch = (post.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (post.content?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedType || post.category === selectedType;
     
-    return matchesSearch && matchesType;
+    return matchesSearch && matchesCategory;
   });
+
 
   // Kullanıcı bilgisini bul
   const getUserById = (userId: string) => {
@@ -180,14 +171,12 @@ export default function CommunityPage() {
     return new Date(dateString).toLocaleDateString('tr-TR');
   };
 
-  const handleLike = (postId: string) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === postId
-          ? { ...post, likes: post.likes + 1 }
-          : post
-      )
-    );
+  const handleLike = async (postId: string) => {
+    await likeQuestion(postId);
+  };
+
+  const handleDislike = async (postId: string) => {
+    await dislikeQuestion(postId);
   };
 
   // Post creation handlers
@@ -200,10 +189,14 @@ export default function CommunityPage() {
     setNewPost({
       title: '',
       content: '',
-      type: 'question',
-      category: '',
+      category: 'other',
       tags: [],
-      mood: 'hopeful'
+      images: [],
+      isAnonymous: false,
+      isSensitive: false,
+      medicalAdvice: false,
+      symptoms: [],
+      treatments: []
     });
   };
 
@@ -216,29 +209,19 @@ export default function CommunityPage() {
     }));
   };
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!newPost.title.trim() || !newPost.content.trim()) {
       alert('Başlık ve içerik alanları boş olamaz!');
       return;
     }
 
-    const post: Post = {
-      id: Date.now().toString(),
-      title: newPost.title,
-      content: newPost.content,
-      authorId: 'current-user', // Normalde login sisteminden gelecek
-      category: newPost.category || 'Genel',
-      type: newPost.type,
-      tags: newPost.tags,
-      publishDate: new Date().toISOString(),
-      views: 0,
-      likes: 0,
-      comments: [],
-      mood: newPost.mood
-    };
-
-    setPosts(prev => [post, ...prev]);
-    handleCollapseCreate();
+    try {
+      await createQuestion(newPost);
+      handleCollapseCreate();
+    } catch (error) {
+      console.error('Post oluşturma hatası:', error);
+      alert('Post oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
   // Event helper functions
@@ -265,7 +248,7 @@ export default function CommunityPage() {
     return gradients[category] || 'from-indigo-600 via-purple-600 to-pink-600';
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getEventCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
       'Meditasyon': '🧘‍♀️',
       'Biyoenerji': '⚡',
@@ -277,7 +260,7 @@ export default function CommunityPage() {
     return icons[category] || '📅';
   };
 
-  if (loading) {
+  if (loading || eventsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -288,36 +271,60 @@ export default function CommunityPage() {
     );
   }
 
+  if (error || eventsError) {
+    console.error('Topluluk verileri yüklenirken hata:', error);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😞</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Bir hata oluştu</h2>
+          <p className="text-gray-600 mb-6">{error || eventsError}</p>
+          <Button 
+            onClick={() => {
+              fetchQuestions();
+              fetchEvents();
+            }}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-6 py-3"
+          >
+            🔄 Tekrar Dene
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
 
       {/* Elegant Filter Bar */}
       <div className="bg-white/60 backdrop-blur-xl border-b border-white/20">
-        <div className="max-w-[1400px] mx-auto px-6 py-4">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-600 mr-2">Kategoriler:</span>
-              <div className="flex space-x-2">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <span className="text-sm font-medium text-gray-600 mr-2 flex-shrink-0">Kategoriler:</span>
+              <div className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1 min-w-0 flex-1">
                 <button
                   onClick={() => setSelectedType('')}
-                  className={selectedType === '' 
-                    ? 'px-5 py-2.5 rounded-2xl text-sm font-medium transition-all bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
-                    : 'px-5 py-2.5 rounded-2xl text-sm font-medium transition-all bg-white/70 text-gray-700 hover:bg-white hover:shadow-md border border-gray-200'
-                  }
+                  className={`flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-medium transition-all ${
+                    selectedType === '' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                      : 'bg-white/70 text-gray-700 hover:bg-white hover:shadow-md border border-gray-200'
+                  }`}
                 >
                   🌟 Tümü
                 </button>
-                {postTypes.map(type => (
+                {postCategories.map(category => (
                   <button
-                    key={type.value}
-                    onClick={() => setSelectedType(type.value)}
-                    className={selectedType === type.value 
-                      ? 'px-5 py-2.5 rounded-2xl text-sm font-medium transition-all flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
-                      : 'px-5 py-2.5 rounded-2xl text-sm font-medium transition-all flex items-center space-x-2 bg-white/70 text-gray-700 hover:bg-white hover:shadow-md border border-gray-200'
-                    }
+                    key={category.value}
+                    onClick={() => setSelectedType(category.value)}
+                    className={`flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-medium transition-all flex items-center space-x-2 ${
+                      selectedType === category.value 
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                        : 'bg-white/70 text-gray-700 hover:bg-white hover:shadow-md border border-gray-200'
+                    }`}
                   >
-                    <span className="text-lg">{type.icon}</span>
-                    <span>{type.label}</span>
+                    <span className="text-lg">{category.icon}</span>
+                    <span className="whitespace-nowrap">{category.label}</span>
                   </button>
                 ))}
               </div>
@@ -349,17 +356,27 @@ export default function CommunityPage() {
                   Trend Konular
                 </h3>
                 <div className="space-y-3">
-                  {['Kalp Sağlığı', 'Beslenme', 'Mental Sağlık', 'Egzersiz', 'Uyku'].map((topic, index) => (
-                    <div key={topic} className="flex items-center justify-between p-3 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all cursor-pointer group">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-lg">#{index + 1}</span>
-                        <span className="font-medium text-gray-700 group-hover:text-blue-600">{topic}</span>
+                  {trendCategories.slice(0, 5).map((trend, index) => {
+                    const categoryData = postCategories.find(c => c.value === trend.name);
+                    return (
+                      <div 
+                        key={trend.name} 
+                        className="flex items-center justify-between p-3 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all cursor-pointer group"
+                        onClick={() => setSelectedType(trend.name)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-lg">#{index + 1}</span>
+                          <span className="text-lg">{categoryData?.icon || '💭'}</span>
+                          <span className="font-medium text-gray-700 group-hover:text-blue-600">
+                            {categoryData?.label || trend.name}
+                          </span>
+                        </div>
+                        <span className="text-xs bg-gradient-to-r from-blue-100 to-purple-100 text-blue-600 px-2 py-1 rounded-full">
+                          {trend.count}
+                        </span>
                       </div>
-                      <span className="text-xs bg-gradient-to-r from-blue-100 to-purple-100 text-blue-600 px-2 py-1 rounded-full">
-                        {Math.floor(Math.random() * 50) + 10}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -380,7 +397,7 @@ export default function CommunityPage() {
                 >
                   <div className="flex items-center space-x-4">
                     <Avatar
-                      src="/api/placeholder/50/50"
+                      src="https://ui-avatars.com/api/?name=Kullanici&background=3b82f6&color=fff"
                       alt="Sen"
                       size="md"
                     />
@@ -406,7 +423,7 @@ export default function CommunityPage() {
                   <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
                       <Avatar
-                        src="/api/placeholder/50/50"
+                        src="https://ui-avatars.com/api/?name=Kullanici&background=3b82f6&color=fff"
                         alt="Sen"
                         size="lg"
                       />
@@ -423,24 +440,24 @@ export default function CommunityPage() {
                     </button>
                   </div>
 
-                  {/* Post Type Selection */}
+                  {/* Category Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      📝 Paylaşım Türü
+                      📝 Kategori
                     </label>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                      {postTypes.map((type) => (
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                      {postCategories.map((category) => (
                         <button 
-                          key={type.value}
-                          onClick={() => setNewPost(prev => ({ ...prev, type: type.value as Post['type'] }))}
+                          key={category.value}
+                          onClick={() => setNewPost(prev => ({ ...prev, category: category.value as any }))}
                           className={`group flex flex-col items-center space-y-2 p-4 rounded-2xl border-2 transition-all ${
-                            newPost.type === type.value 
+                            newPost.category === category.value 
                               ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-md' 
                               : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
                           }`}
                         >
-                          <span className="text-2xl group-hover:scale-110 transition-transform">{type.icon}</span>
-                          <span className="text-sm font-medium text-center">{type.label}</span>
+                          <span className="text-2xl group-hover:scale-110 transition-transform">{category.icon}</span>
+                          <span className="text-sm font-medium text-center">{category.label}</span>
                         </button>
                       ))}
                     </div>
@@ -484,25 +501,47 @@ export default function CommunityPage() {
                     </div>
                   </div>
 
-                  {/* Category Selection */}
+                  {/* Privacy and Content Options */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      🏷️ Kategori
+                      🔒 Gizlilik ve İçerik
                     </label>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.length > 0 && categories.map((category) => (
-                        <button
-                          key={category}
-                          onClick={() => setNewPost(prev => ({ ...prev, category }))}
-                          className={`px-4 py-2 rounded-2xl border-2 transition-all ${
-                            newPost.category === category
-                              ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 font-medium'
-                              : 'border-gray-200 hover:border-purple-300 text-gray-700'
-                          }`}
-                        >
-                    {category}
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <button
+                        onClick={() => setNewPost(prev => ({ ...prev, isAnonymous: !prev.isAnonymous }))}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-2xl border-2 transition-all ${
+                          newPost.isAnonymous
+                            ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 text-orange-700 font-medium'
+                            : 'border-gray-200 hover:border-orange-300 text-gray-700'
+                        }`}
+                      >
+                        <span>{newPost.isAnonymous ? '🔒' : '👤'}</span>
+                        <span>{newPost.isAnonymous ? 'Anonim' : 'İsimli'}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setNewPost(prev => ({ ...prev, isSensitive: !prev.isSensitive }))}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-2xl border-2 transition-all ${
+                          newPost.isSensitive
+                            ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700 font-medium'
+                            : 'border-gray-200 hover:border-red-300 text-gray-700'
+                        }`}
+                      >
+                        <span>{newPost.isSensitive ? '⚠️' : '✅'}</span>
+                        <span>{newPost.isSensitive ? 'Hassas' : 'Normal'}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setNewPost(prev => ({ ...prev, medicalAdvice: !prev.medicalAdvice }))}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-2xl border-2 transition-all ${
+                          newPost.medicalAdvice
+                            ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 font-medium'
+                            : 'border-gray-200 hover:border-blue-300 text-gray-700'
+                        }`}
+                      >
+                        <span>{newPost.medicalAdvice ? '🏥' : '💭'}</span>
+                        <span>{newPost.medicalAdvice ? 'Tıbbi' : 'Genel'}</span>
+                      </button>
                     </div>
                   </div>
 
@@ -539,34 +578,6 @@ export default function CommunityPage() {
                     )}
                   </div>
 
-                  {/* Mood Selection */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      😊 Ruh Halin
-                    </label>
-                    <div className="flex space-x-3">
-                      {[
-                        { value: 'happy', icon: '😊', label: 'Mutlu' },
-                        { value: 'hopeful', icon: '🌟', label: 'Umutlu' },
-                        { value: 'worried', icon: '😟', label: 'Endişeli' },
-                        { value: 'grateful', icon: '🙏', label: 'Minnettar' },
-                        { value: 'curious', icon: '🤔', label: 'Meraklı' }
-                      ].map((mood) => (
-                        <button
-                          key={mood.value}
-                          onClick={() => setNewPost(prev => ({ ...prev, mood: mood.value as Post['mood'] }))}
-                          className={`flex flex-col items-center space-y-1 p-3 rounded-2xl border-2 transition-all ${
-                            newPost.mood === mood.value
-                              ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-yellow-50 shadow-md'
-                              : 'border-gray-200 hover:border-orange-300'
-                          }`}
-                        >
-                          <span className="text-2xl">{mood.icon}</span>
-                          <span className="text-xs font-medium">{mood.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex items-center justify-between pt-6 border-t border-gray-100">
@@ -615,7 +626,7 @@ export default function CommunityPage() {
                   )}
                   {selectedType && (
                     <span className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 rounded-2xl text-sm font-medium flex items-center">
-                      {postTypes.find(t => t.value === selectedType)?.icon} {postTypes.find(t => t.value === selectedType)?.label}
+                      {postCategories.find(c => c.value === selectedType)?.icon} {postCategories.find(c => c.value === selectedType)?.label}
                       <button onClick={() => setSelectedType('')} className="ml-2 text-purple-600 hover:text-purple-800 font-bold">×</button>
                     </span>
                   )}
@@ -638,66 +649,78 @@ export default function CommunityPage() {
                   </div>
                 ) : (
                 filteredPosts.map((post) => {
-                  const author = getUserById(post.authorId);
-                    if (!author) return null;
+                  const author = post.author;
+                  
 
                     return (
-                    <article key={post.id} className="group bg-white rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-200 overflow-hidden">
+                    <article key={post._id} className="group bg-white rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-200 overflow-hidden">
                       
                       {/* Modern Header - LinkedIn Style */}
                       <div className="p-4 md:p-6">
                         <div className="flex items-center space-x-4 mb-5">
                           <div className="relative">
                             <Avatar
-                              src={author.avatar}
-                              alt={author.name}
+                              src={post.isAnonymous ? `https://ui-avatars.com/api/?name=Anonim&background=6b7280&color=fff` : author.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
+                              alt={post.isAnonymous ? 'Anonim Kullanıcı' : `${author.firstName} ${author.lastName}`}
                               size="lg"
                             />
-                                {author.verified && (
-                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
-                                <span className="text-white text-xs">✓</span>
-                              </div>
-                            )}
                           </div>
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-1">
-                              <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition-colors">{author.name}</h4>
-                              {author.verified && (
-                                <span className="text-blue-500 text-sm">•</span>
-                              )}
-                              <span className="text-sm text-gray-500 font-medium">{author.title}</span>
+                              <h4 className="font-bold text-gray-900 hover:text-blue-600 cursor-pointer transition-colors">
+                                {post.isAnonymous ? 'Anonim Kullanıcı' : `${author.firstName} ${author.lastName}`}
+                              </h4>
+                              <span className="text-sm text-gray-500 font-medium">@{author.username}</span>
                             </div>
                             <div className="flex items-center space-x-2 text-sm text-gray-500">
-                              <span>{getTimeAgo(post.publishDate)}</span>
-                                <span>•</span>
+                              <span>{getTimeAgo(post.createdAt)}</span>
+                              <span>•</span>
                               <span className="flex items-center space-x-1">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
-                                </svg>
-                                <span>{post.views}</span>
+                                <span>{getCategoryIcon(post.category)}</span>
+                                <span>{postCategories.find(c => c.value === post.category)?.label}</span>
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center space-x-1">
+                                <span>👁️</span>
+                                <span>{post.views || 0} görüntülenme</span>
                               </span>
                             </div>
                           </div>
 
                           <div className="flex items-center space-x-2">
                             <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${
-                              post.type === 'question' ? 'bg-blue-100 text-blue-700' :
-                              post.type === 'experience' ? 'bg-purple-100 text-purple-700' :
-                              post.type === 'celebration' ? 'bg-green-100 text-green-700' :
-                              'bg-orange-100 text-orange-700'
+                              post.category === 'diabetes' ? 'bg-blue-100 text-blue-700' :
+                              post.category === 'heart-disease' ? 'bg-red-100 text-red-700' :
+                              post.category === 'cancer' ? 'bg-pink-100 text-pink-700' :
+                              post.category === 'mental-health' ? 'bg-purple-100 text-purple-700' :
+                              post.category === 'arthritis' ? 'bg-orange-100 text-orange-700' :
+                              post.category === 'asthma' ? 'bg-cyan-100 text-cyan-700' :
+                              post.category === 'digestive' ? 'bg-green-100 text-green-700' :
+                              post.category === 'neurological' ? 'bg-indigo-100 text-indigo-700' :
+                              post.category === 'autoimmune' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
                             }`}>
-                              <span>{getTypeIcon(post.type)}</span>
-                              <span>{postTypes.find(t => t.value === post.type)?.label}</span>
+                              <span>{getCategoryIcon(post.category)}</span>
+                              <span>{postCategories.find(c => c.value === post.category)?.label}</span>
                             </div>
-                            <div className="text-xl">{getMoodIcon(post.mood)}</div>
+                            <div className="flex items-center space-x-1">
+                              {post.isAnonymous && (
+                                <div className="text-xl" title="Anonim Paylaşım">🔒</div>
+                              )}
+                              {post.isSensitive && (
+                                <div className="text-xl" title="Hassas İçerik">⚠️</div>
+                              )}
+                              {post.medicalAdvice && (
+                                <div className="text-xl" title="Tıbbi Tavsiye">🏥</div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
                         {/* Content Area - Instagram Style */}
                         <div className="mb-5">
-                          <Link href={`/sorular/${post.id}`}>
+                          <Link href={`/posts/${post._id}`}>
                             <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 cursor-pointer transition-colors line-clamp-2">
                               {post.title}
                             </h2>
@@ -706,7 +729,7 @@ export default function CommunityPage() {
                             <p className="line-clamp-4">{post.content}</p>
                           </div>
                           {post.content.length > 200 && (
-                            <Link href={`/sorular/${post.id}`}>
+                            <Link href={`/posts/${post._id}`}>
                               <button className="text-blue-600 text-sm font-medium mt-2 hover:text-blue-800 transition-colors">
                                 Devamını oku...
                               </button>
@@ -714,21 +737,59 @@ export default function CommunityPage() {
                           )}
                         </div>
 
-                        {/* Modern Tags */}
-                        {post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-5">
-                            {post.tags.slice(0, 3).map((tag) => (
-                              <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer">
-                                #{tag}
-                              </span>
-                            ))}
-                            {post.tags.length > 3 && (
-                              <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">
-                                +{post.tags.length - 3} daha
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {/* Tags, Symptoms, Treatments */}
+                        <div className="space-y-3 mb-5">
+                          {/* Tags */}
+                          {post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              <span className="text-xs font-medium text-gray-500">🏷️ Etiketler:</span>
+                              {post.tags.slice(0, 3).map((tag: string) => (
+                                <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer">
+                                  #{tag}
+                                </span>
+                              ))}
+                              {post.tags.length > 3 && (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">
+                                  +{post.tags.length - 3} daha
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Symptoms */}
+                          {post.symptoms && post.symptoms.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              <span className="text-xs font-medium text-gray-500">🩺 Belirtiler:</span>
+                              {post.symptoms.slice(0, 2).map((symptom: string) => (
+                                <span key={symptom} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                                  {symptom}
+                                </span>
+                              ))}
+                              {post.symptoms.length > 2 && (
+                                <span className="px-3 py-1 bg-red-100 text-red-500 rounded-full text-sm">
+                                  +{post.symptoms.length - 2} daha
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Treatments */}
+                          {post.treatments && post.treatments.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              <span className="text-xs font-medium text-gray-500">💊 Tedaviler:</span>
+                              {post.treatments.slice(0, 2).map((treatment: string) => (
+                                <span key={treatment} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                  {treatment}
+                                </span>
+                              ))}
+                              {post.treatments.length > 2 && (
+                                <span className="px-3 py-1 bg-green-100 text-green-500 rounded-full text-sm">
+                                  +{post.treatments.length - 2} daha
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Compact Engagement Bar */}
@@ -739,27 +800,43 @@ export default function CommunityPage() {
                           <div className="flex items-center space-x-1">
                             
                             {/* Like */}
-                              <button
-                              onClick={() => handleLike(post.id)}
-                              className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-red-50 transition-all group"
+                            <button
+                              onClick={() => handleLike(post._id)}
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all group ${
+                                post.isLiked ? 'bg-red-50 text-red-600' : 'hover:bg-red-50'
+                              }`}
                             >
-                              <span className="text-lg group-hover:scale-110 transition-transform">❤️</span>
-                              <span className="text-sm font-medium text-gray-700 group-hover:text-red-600">{post.likes}</span>
+                              <span className={`text-lg group-hover:scale-110 transition-transform ${
+                                post.isLiked ? 'text-red-500' : ''
+                              }`}>❤️</span>
+                              <span className={`text-sm font-medium group-hover:text-red-600 ${
+                                post.isLiked ? 'text-red-600' : 'text-gray-700'
+                              }`}>{post.likesCount || 0}</span>
+                            </button>
+
+                            {/* Dislike */}
+                            <button
+                              onClick={() => handleDislike(post._id)}
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-full transition-all group ${
+                                post.isDisliked ? 'bg-gray-50 text-gray-600' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className={`text-lg group-hover:scale-110 transition-transform ${
+                                post.isDisliked ? 'text-gray-500' : ''
+                              }`}>👎</span>
+                              <span className={`text-sm font-medium group-hover:text-gray-600 ${
+                                post.isDisliked ? 'text-gray-600' : 'text-gray-700'
+                              }`}>{post.dislikesCount || 0}</span>
                             </button>
 
                             {/* Comment */}
-                            <Link href={`/sorular/${post.id}#yorumlar`}>
+                            <Link href={`/posts/${post._id}#yorumlar`}>
                               <button className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-blue-50 transition-all group">
                                 <span className="text-lg group-hover:scale-110 transition-transform">💬</span>
-                                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">{post.comments.length}</span>
+                                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">{post.commentCount || 0}</span>
                               </button>
                             </Link>
 
-                            {/* Support */}
-                            <button className="flex items-center space-x-2 px-3 py-2 rounded-full hover:bg-green-50 transition-all group">
-                              <span className="text-lg group-hover:scale-110 transition-transform">🤝</span>
-                              <span className="text-sm font-medium text-gray-700 group-hover:text-green-600">12</span>
-                            </button>
                             </div>
 
                           {/* Quick Actions */}
@@ -794,7 +871,7 @@ export default function CommunityPage() {
                     {/* Compact Header */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3 bg-white/20 rounded-full px-3 py-1.5">
-                        <span className="text-lg">{getCategoryIcon(featuredEvent.category)}</span>
+                        <span className="text-lg">{getEventCategoryIcon(featuredEvent.category)}</span>
                         <span className="text-sm font-medium">{featuredEvent.category}</span>
                       </div>
                       <div className="w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center">

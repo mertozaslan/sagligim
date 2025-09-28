@@ -167,45 +167,44 @@ const EventsPage: React.FC = () => {
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjIiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZG90cykiLz48L3N2Zz4=')] opacity-30"></div>
           
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="relative grid lg:grid-cols-2 gap-12 items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+            <div className="relative grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left Side - Content */}
-              <div className="text-white space-y-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+              <div className="text-white space-y-6 lg:space-y-8">
+                <div className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium">🔥 Popüler Etkinlikler</span>
+                  <span className="text-xs sm:text-sm font-medium">🔥 Popüler Etkinlikler</span>
                 </div>
 
                 <div>
-                  <h1 className="text-5xl lg:text-6xl font-bold leading-tight mb-4">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-3 sm:mb-4">
                     <span className="block">Sağlıklı Yaşama</span>
                     <span className="block text-yellow-300">İlk Adımını At!</span>
                   </h1>
-                  <p className="text-sm text-white/70 font-medium tracking-wider uppercase">Sağlık Hep ile etkinliklerde</p>
+                  <p className="text-xs sm:text-sm text-white/70 font-medium tracking-wider uppercase">Sağlık Hep ile etkinliklerde</p>
                 </div>
 
-                <p className="text-xl text-white/90 leading-relaxed max-w-lg">
+                <p className="text-base sm:text-lg lg:text-xl text-white/90 leading-relaxed max-w-lg">
                   Sağlık Bakanlığı, İBB, uzman doktorlar ve profesyonel sağlık kuruluşlarının düzenlediği 
                   <span className="font-semibold text-yellow-300"> ücretsiz etkinliklere</span> katıl. 
                   Güvenilir kaynaklardan doğru bilgileri al, yeni insanlarla tanış!
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Link href="#etkinlikler">
-                  <Button 
-  size="lg" 
-  className="bg-white !text-purple-600 hover:bg-gray-100 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 rounded-xl px-8"
->
-  <span className="mr-2">🎯</span>
-  Hemen Katıl
-</Button>
-
+                    <Button 
+                      size="lg" 
+                      className="bg-white !text-purple-600 hover:bg-gray-100 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 rounded-xl px-6 sm:px-8 w-full sm:w-auto"
+                    >
+                      <span className="mr-2">🎯</span>
+                      Hemen Katıl
+                    </Button>
                   </Link>
                   <Link href="/uzmanlar">
                     <Button 
                       variant="outline" 
                       size="lg"
-                      className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm rounded-xl px-8"
+                      className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm rounded-xl px-6 sm:px-8 w-full sm:w-auto"
                     >
                       <span className="mr-2">👨‍⚕️</span>
                       Uzmanları Gör
@@ -214,33 +213,33 @@ const EventsPage: React.FC = () => {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="flex items-center gap-8 pt-4">
+                <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 lg:gap-8 pt-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-yellow-300">{events.length}+</div>
-                    <div className="text-sm text-white/80">Etkinlik</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-yellow-300">{events.length}+</div>
+                    <div className="text-xs sm:text-sm text-white/80">Etkinlik</div>
                   </div>
-                  <div className="w-px h-12 bg-white/30"></div>
+                  <div className="w-px h-8 sm:h-12 bg-white/30"></div>
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-yellow-300">{events.filter(e => e.price === 0).length}</div>
-                    <div className="text-sm text-white/80">Ücretsiz</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-yellow-300">{events.filter(e => e.price === 0).length}</div>
+                    <div className="text-xs sm:text-sm text-white/80">Ücretsiz</div>
                   </div>
-                  <div className="w-px h-12 bg-white/30"></div>
+                  <div className="w-px h-8 sm:h-12 bg-white/30"></div>
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-yellow-300">2.5K+</div>
-                    <div className="text-sm text-white/80">Katılımcı</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-yellow-300">2.5K+</div>
+                    <div className="text-xs sm:text-sm text-white/80">Katılımcı</div>
                   </div>
                 </div>
               </div>
 
               {/* Right Side - Event Previews */}
-              <div className="relative">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="relative hidden lg:block">
+                <div className="grid grid-cols-2 gap-3 lg:gap-4">
                   {/* Featured Event 1 */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                    <div className="w-full h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl mb-3 flex items-center justify-center">
-                      <span className="text-3xl">🥗</span>
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 lg:p-4 shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                    <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl mb-3 flex items-center justify-center">
+                      <span className="text-2xl lg:text-3xl">🥗</span>
                     </div>
-                    <h3 className="font-bold text-gray-900 text-sm mb-1">Sağlıklı Beslenme</h3>
+                    <h3 className="font-bold text-gray-900 text-xs lg:text-sm mb-1">Sağlıklı Beslenme</h3>
                     <p className="text-xs text-gray-600 mb-2">Dr. Ayşe Kaya</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">Ücretsiz</span>
@@ -249,11 +248,11 @@ const EventsPage: React.FC = () => {
                   </div>
 
                   {/* Featured Event 2 */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl transform -rotate-2 hover:rotate-0 transition-transform duration-300 mt-6">
-                    <div className="w-full h-24 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-xl mb-3 flex items-center justify-center">
-                      <span className="text-3xl">🧘‍♀️</span>
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 lg:p-4 shadow-xl transform -rotate-2 hover:rotate-0 transition-transform duration-300 mt-4 lg:mt-6">
+                    <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-xl mb-3 flex items-center justify-center">
+                      <span className="text-2xl lg:text-3xl">🧘‍♀️</span>
                     </div>
-                    <h3 className="font-bold text-gray-900 text-sm mb-1">Meditasyon Temelleri</h3>
+                    <h3 className="font-bold text-gray-900 text-xs lg:text-sm mb-1">Meditasyon Temelleri</h3>
                     <p className="text-xs text-gray-600 mb-2">Uzm. Zeynep Ak</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">Ücretsiz</span>
@@ -262,11 +261,11 @@ const EventsPage: React.FC = () => {
                   </div>
 
                   {/* Featured Event 3 */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl transform rotate-1 hover:rotate-0 transition-transform duration-300">
-                    <div className="w-full h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl mb-3 flex items-center justify-center">
-                      <span className="text-3xl">🏃‍♂️</span>
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 lg:p-4 shadow-xl transform rotate-1 hover:rotate-0 transition-transform duration-300">
+                    <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl mb-3 flex items-center justify-center">
+                      <span className="text-2xl lg:text-3xl">🏃‍♂️</span>
                     </div>
-                    <h3 className="font-bold text-gray-900 text-sm mb-1">Spor ve Sağlık</h3>
+                    <h3 className="font-bold text-gray-900 text-xs lg:text-sm mb-1">Spor ve Sağlık</h3>
                     <p className="text-xs text-gray-600 mb-2">Antrenör Mert B.</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">Ücretsiz</span>
@@ -275,11 +274,11 @@ const EventsPage: React.FC = () => {
                   </div>
 
                   {/* Featured Event 4 */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl transform -rotate-1 hover:rotate-0 transition-transform duration-300 mt-4">
-                    <div className="w-full h-24 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl mb-3 flex items-center justify-center">
-                      <span className="text-3xl">😌</span>
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 lg:p-4 shadow-xl transform -rotate-1 hover:rotate-0 transition-transform duration-300 mt-2 lg:mt-4">
+                    <div className="w-full h-20 lg:h-24 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl mb-3 flex items-center justify-center">
+                      <span className="text-2xl lg:text-3xl">😌</span>
                     </div>
-                    <h3 className="font-bold text-gray-900 text-sm mb-1">Stres Yönetimi</h3>
+                    <h3 className="font-bold text-gray-900 text-xs lg:text-sm mb-1">Stres Yönetimi</h3>
                     <p className="text-xs text-gray-600 mb-2">Psikolog Elif S.</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">Ücretsiz</span>
@@ -289,10 +288,10 @@ const EventsPage: React.FC = () => {
                 </div>
 
                 {/* Floating Elements */}
-                <div className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-400 rounded-full shadow-xl flex items-center justify-center text-xl animate-bounce">
+                <div className="absolute -top-4 -right-4 w-10 h-10 lg:w-12 lg:h-12 bg-yellow-400 rounded-full shadow-xl flex items-center justify-center text-lg lg:text-xl animate-bounce">
                   ⭐
                 </div>
-                <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-pink-400 rounded-full shadow-lg flex items-center justify-center text-sm animate-pulse">
+                <div className="absolute -bottom-2 -left-2 w-6 h-6 lg:w-8 lg:h-8 bg-pink-400 rounded-full shadow-lg flex items-center justify-center text-xs lg:text-sm animate-pulse">
                   💖
                 </div>
               </div>
@@ -301,7 +300,7 @@ const EventsPage: React.FC = () => {
 
           {/* Smooth Bottom Transition */}
           <div className="absolute bottom-0 left-0 right-0">
-            <svg className="w-full h-16 text-blue-50" viewBox="0 0 1440 120" fill="currentColor">
+            <svg className="w-full h-12 sm:h-16 text-blue-50" viewBox="0 0 1440 120" fill="currentColor">
               <path d="M0,32L48,37.3C96,43,192,53,288,53.3C384,53,480,43,576,32C672,21,768,11,864,16C960,21,1056,43,1152,48C1248,53,1344,43,1392,37.3L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
             </svg>
           </div>

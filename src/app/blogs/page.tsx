@@ -2,16 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Tag from '@/components/ui/Tag';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
+import Toast from '@/components/ui/Toast';
+import ShareModal from '@/components/ShareModal';
 import { useBlogsStore, useExpertsStore } from '@/stores';
 import type { User } from '@/services/api';
 import type { CreateBlogData } from '@/services/blogs';
+import { uploadService } from '@/services/upload';
 
 export default function Kesfet() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isCreateExpanded, setIsCreateExpanded] = useState(false);
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
   const [newBlog, setNewBlog] = useState<CreateBlogData>({
     title: '',
     content: '',
@@ -26,6 +31,10 @@ export default function Kesfet() {
     seoTitle: '',
     seoDescription: ''
   });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareBlog, setShareBlog] = useState<any>(null);
   
   // Zustand stores
   const {
@@ -128,20 +137,114 @@ export default function Kesfet() {
       seoTitle: '',
       seoDescription: ''
     });
+    setSelectedFile(null);
+  };
+
+  // Tek resim seçme
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) return;
+
+    // Validasyon
+    const validation = uploadService.validateFile(file);
+    if (!validation.valid) {
+      setToast({ message: validation.error!, type: 'error' });
+      return;
+    }
+
+    setSelectedFile(file);
+    setToast({ message: 'Resim seçildi!', type: 'success' });
+  };
+
+  // Seçili resmi kaldır
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+  };
+
+  // Resim yükle
+  const handleUploadImage = async (): Promise<string | null> => {
+    if (!selectedFile) return null;
+
+    try {
+      setIsUploadingImage(true);
+      const response = await uploadService.uploadSingle(selectedFile);
+      setToast({ message: 'Resim başarıyla yüklendi!', type: 'success' });
+      return response.imageUrl;
+    } catch (error: any) {
+      setToast({ message: error.message || 'Resim yükleme başarısız!', type: 'error' });
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Paylaşım modalını aç
+  const handleShare = (blog: any) => {
+    setShareBlog(blog);
+    setShareModalOpen(true);
   };
 
   const handleCreateBlog = async () => {
-    if (!newBlog.title.trim() || !newBlog.content.trim()) {
-      alert('Başlık ve içerik alanları boş olamaz!');
+    // Client-side validasyon
+    if (!newBlog.title.trim()) {
+      setToast({ message: 'Başlık alanı boş olamaz!', type: 'error' });
+      return;
+    }
+
+    if (newBlog.title.length < 5 || newBlog.title.length > 100) {
+      setToast({ message: 'Başlık 5-100 karakter arasında olmalı!', type: 'error' });
+      return;
+    }
+
+    if (!newBlog.content.trim()) {
+      setToast({ message: 'İçerik alanı boş olamaz!', type: 'error' });
+      return;
+    }
+
+    if (newBlog.content.length < 50) {
+      setToast({ message: 'İçerik en az 50 karakter olmalı!', type: 'error' });
       return;
     }
 
     try {
-      await createBlog(newBlog);
+      // Önce resim yükle (varsa)
+      let uploadedImageUrl: string | null = null;
+      if (selectedFile) {
+        setToast({ message: 'Resim yükleniyor...', type: 'info' });
+        uploadedImageUrl = await handleUploadImage();
+      }
+
+      // Blog'u oluştur
+      const blogDataWithImage = {
+        ...newBlog,
+        images: uploadedImageUrl ? [uploadedImageUrl] : []
+      };
+
+      await createBlog(blogDataWithImage);
       handleCollapseCreate();
-    } catch (error) {
+      setToast({ message: 'Blog yazısı başarıyla oluşturuldu!', type: 'success' });
+    } catch (error: any) {
       console.error('Blog oluşturma hatası:', error);
-      alert('Blog oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+      
+      // API'dan gelen hata mesajlarını işle
+      let errorMsg = '';
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        // Validation hataları
+        errorMsg = error.response.data.errors
+          .map((err: any) => `${err.field}: ${err.message}`)
+          .join(', ');
+      } else if (error.response?.data?.message) {
+        // Genel API hatası
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        // Network veya diğer hatalar
+        errorMsg = error.message;
+      } else {
+        errorMsg = 'Blog oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.';
+      }
+      
+      setToast({ message: errorMsg, type: 'error' });
     }
   };
 
@@ -185,18 +288,41 @@ export default function Kesfet() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {shareBlog && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setShareBlog(null);
+          }}
+          url={`${typeof window !== 'undefined' ? window.location.origin : ''}/blogs/${shareBlog._id}`}
+          title={shareBlog.title}
+          description={shareBlog.content.substring(0, 200)}
+        />
+      )}
+      
       {/* Main Content */}
       <div className="relative bg-gray-50 min-h-screen">
         {/* Decorative Elements */}
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col lg:flex-row gap-10">
+        <div className="relative max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-12">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8">
             {/* Sol Panel - İçerik */}
-            <div className="flex-1">
+            <div className="order-1 xl:order-1 xl:col-span-8">
               {/* Blog Oluşturma Formu - Sadece Doctor/Admin için */}
               {canCreateBlog && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-8 relative overflow-hidden">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4 md:p-8 mb-6 md:mb-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-full blur-2xl"></div>
                   <div className="relative">
                     {!isCreateExpanded ? (
@@ -330,6 +456,61 @@ export default function Kesfet() {
                           </div>
                         </div>
 
+                        {/* Resim Yükleme */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-3">
+                            📷 Resim
+                          </label>
+                          
+                          {/* Resim seçme butonu */}
+                          {!selectedFile ? (
+                            <div>
+                              <input
+                                type="file"
+                                id="blog-image-upload"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="blog-image-upload"
+                                className="flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400 rounded-2xl transition-all cursor-pointer"
+                              >
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span className="text-sm font-medium text-green-700">
+                                  Resim Seç (JPG, PNG, GIF, WEBP)
+                                </span>
+                              </label>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Maksimum 5MB boyutunda resim yükleyebilirsiniz
+                              </p>
+                            </div>
+                          ) : (
+                            /* Seçilen resim önizleme */
+                            <div className="relative group">
+                              <div className="relative rounded-xl overflow-hidden border-2 border-white shadow-lg" style={{ height: '250px' }}>
+                                <Image
+                                  src={URL.createObjectURL(selectedFile)}
+                                  alt="Preview"
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                              <button
+                                onClick={handleRemoveFile}
+                                className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                              >
+                                ×
+                              </button>
+                              <p className="text-xs text-gray-600 mt-2 truncate">
+                                {selectedFile.name}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
                         {/* Medical Disclaimer */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -363,11 +544,20 @@ export default function Kesfet() {
                             </Button>
                             <Button 
                               onClick={handleCreateBlog}
-                              disabled={!newBlog.title.trim() || !newBlog.content.trim()}
+                              disabled={isUploadingImage || !newBlog.title.trim() || !newBlog.content.trim()}
                               className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-2xl px-8 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <span className="mr-2">🚀</span>
-                              Blog Yayınla
+                              {isUploadingImage ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                                  Yükleniyor...
+                                </>
+                              ) : (
+                                <>
+                                  <span className="mr-2">🚀</span>
+                                  Blog Yayınla
+                                </>
+                              )}
                             </Button>
                           </div>
                         </div>
@@ -378,7 +568,7 @@ export default function Kesfet() {
               )}
 
               {/* Filtre Etiketleri */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-8 relative overflow-hidden">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4 md:p-8 mb-6 md:mb-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-2xl"></div>
                 <div className="relative">
                   <div className="flex items-center mb-6">
@@ -414,7 +604,7 @@ export default function Kesfet() {
               </div>
 
               {/* İçerik Başlığı */}
-              <div className="mb-8">
+              <div className="mb-6 md:mb-8">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -436,7 +626,7 @@ export default function Kesfet() {
               </div>
 
               {/* Blog Yazıları */}
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 {filteredBlogs.length === 0 ? (
                   <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-16 text-center">
                     <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
@@ -454,14 +644,16 @@ export default function Kesfet() {
                     if (!author) return null;
 
                     return (
-                      <div key={blog._id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 relative overflow-hidden">
+                      <div key={blog._id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4 md:p-8 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-full blur-2xl"></div>
                         <div className="relative">
                           {/* Blog Header */}
                           <div className="flex items-center space-x-4 mb-6">
                             <Link href={`/profil/${author.username}`}>
                               <Avatar
-                                src={author.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=10b981&color=fff`}
+                                src={author.profilePicture 
+                                  ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${author.profilePicture}`
+                                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=10b981&color=fff`}
                                 alt={`${author.firstName} ${author.lastName}`}
                                 size="lg"
                                 className="cursor-pointer hover:ring-4 hover:ring-green-100 transition-all duration-300"
@@ -491,11 +683,36 @@ export default function Kesfet() {
 
                           {/* Blog Content */}
                           <div className="mb-6">
+                            {/* Başlık */}
                             <Link href={`/blogs/${blog._id}`}>
                               <h2 className="text-2xl font-bold text-gray-900 mb-3 hover:text-green-600 cursor-pointer transition-colors">
                                 {blog.title}
                               </h2>
                             </Link>
+
+                            {/* Blog Images */}
+                            {blog.images && blog.images.length > 0 && (
+                              <Link href={`/blogs/${blog._id}`}>
+                                <div className="relative mb-4 rounded-xl overflow-hidden cursor-pointer group" style={{ height: '200px' }}>
+                                  <Image
+                                    src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${blog.images[0]}`}
+                                    alt={blog.title}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                  {blog.images.length > 1 && (
+                                    <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center space-x-1">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                      <span>+{blog.images.length - 1}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                            )}
+
+                            {/* İçerik */}
                             <p className="text-gray-700 leading-relaxed mb-4">
                               {blog.excerpt}
                             </p>
@@ -539,6 +756,13 @@ export default function Kesfet() {
                                 <span className="text-lg">👁️</span>
                                 <span className="font-medium">{blog.views || 0}</span>
                               </button>
+                              <button 
+                                onClick={() => handleShare(blog)}
+                                className="flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors group"
+                                title="Paylaş"
+                              >
+                                <span className="text-lg group-hover:scale-110 transition-transform">🔗</span>
+                              </button>
                             </div>
                             <div className="flex items-center space-x-2">
                               {blog.isFeatured && (
@@ -560,15 +784,15 @@ export default function Kesfet() {
             </div>
 
             {/* Sağ Panel - Sidebar */}
-            <div className="lg:w-96">
+            <div className="order-2 xl:order-2 xl:col-span-4">
+              <div className="sticky top-32 space-y-6">
               {/* Popüler Uzmanlar */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-8 relative overflow-hidden">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-full blur-2xl"></div>
                 <div className="relative">
                   <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-lg mr-4">
-                      👨‍⚕️
-                    </div>
+                  <span className="w-2 h-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-full mr-3"></span>
+
                     <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                       Öne Çıkan Uzmanlar
                     </h3>
@@ -604,15 +828,19 @@ export default function Kesfet() {
                             <div className="relative">
                               <Link href={`/profil/${expert.username}`}>
                                 <Avatar
-                                  src={expert.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.firstName + ' ' + expert.lastName)}&background=10b981&color=fff`}
+                                  src={expert.profilePicture 
+                                    ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${expert.profilePicture}`
+                                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.firstName + ' ' + expert.lastName)}&background=10b981&color=fff`}
                                   alt={`Dr. ${expert.firstName} ${expert.lastName}`}
                                   size="md"
                                   className="cursor-pointer hover:ring-4 hover:ring-blue-100 transition-all duration-300"
                                 />
                               </Link>
-                              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs">
-                                {index + 1}
-                              </div>
+                              {expert.isVerified && expert.doctorInfo.approvalStatus === 'approved' && (
+                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
+                                  <span className="text-white text-xs">✓</span>
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center">
@@ -650,7 +878,7 @@ export default function Kesfet() {
               </div>
 
               {/* Popüler Konular */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 relative overflow-hidden">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 relative overflow-hidden">
                 <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-2xl"></div>
                 <div className="relative">
                   <div className="flex items-center mb-6">
@@ -695,6 +923,7 @@ export default function Kesfet() {
                   )}
 
                 </div>
+              </div>
               </div>
             </div>
           </div>

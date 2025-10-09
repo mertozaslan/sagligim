@@ -20,7 +20,7 @@ export interface Post {
   _id: string;
   title: string;
   content: string;
-  category: 'diabetes' | 'heart-disease' | 'cancer' | 'mental-health' | 'arthritis' | 'asthma' | 'digestive' | 'neurological' | 'autoimmune' | 'other';
+  category: 'diabetes' | 'heart-disease' | 'cancer' | 'mental-health' | 'arthritis' | 'asthma' | 'digestive' | 'neurological' | 'autoimmune' | 'experience' | 'curiosity' | 'success-story' | 'other';
   tags: string[];
   images: string[];
   isAnonymous: boolean;
@@ -49,7 +49,7 @@ export interface Post {
 export interface CreatePostData {
   title: string;
   content: string;
-  category: 'diabetes' | 'heart-disease' | 'cancer' | 'mental-health' | 'arthritis' | 'asthma' | 'digestive' | 'neurological' | 'autoimmune' | 'other';
+  category: 'diabetes' | 'heart-disease' | 'cancer' | 'mental-health' | 'arthritis' | 'asthma' | 'digestive' | 'neurological' | 'autoimmune' | 'experience' | 'curiosity' | 'success-story' | 'other';
   tags: string[];
   images?: string[];
   isAnonymous?: boolean;
@@ -62,7 +62,7 @@ export interface CreatePostData {
 export interface UpdatePostData {
   title?: string;
   content?: string;
-  category?: 'diabetes' | 'heart-disease' | 'cancer' | 'mental-health' | 'arthritis' | 'asthma' | 'digestive' | 'neurological' | 'autoimmune' | 'other';
+  category?: 'diabetes' | 'heart-disease' | 'cancer' | 'mental-health' | 'arthritis' | 'asthma' | 'digestive' | 'neurological' | 'autoimmune' | 'experience' | 'curiosity' | 'success-story' | 'other';
   tags?: string[];
   images?: string[];
   isAnonymous?: boolean;

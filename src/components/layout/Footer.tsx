@@ -6,20 +6,21 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
-    'Sağlık Hep': [
-      { name: 'Hakkımızda', href: '/hakkimizda' },
+    'Keşfet': [
+      { name: 'Gönderiler', href: '/posts' },
+      { name: 'Blog Yazıları', href: '/blogs' },
+      { name: 'Etkinlikler', href: '/events' },
+      { name: 'Uzmanlar', href: '/experts' },
+    ],
+    'Hesap': [
+      { name: 'Giriş Yap', href: '/login' },
+      { name: 'Kayıt Ol', href: '/register' },
+      { name: 'Profil', href: '/profil' },
+    ],
+    'Hakkımızda': [
+      { name: 'Biz Kimiz', href: '/hakkimizda' },
       { name: 'İletişim', href: '/iletisim' },
-      { name: 'Blog', href: '/blog' },
-    ],
-    'Uzmanlar': [
-      { name: 'Doktor Ol', href: '/doktor-ol' },
-      { name: 'Uzman Başvuru', href: '/uzman-basvuru' },
-      { name: 'Uzman Girişi', href: '/uzman-giris' },
-    ],
-    'Destek': [
       { name: 'Yardım Merkezi', href: '/yardim' },
-      { name: 'SSS', href: '/sss' },
-      { name: 'Gizlilik', href: '/gizlilik' },
     ],
   };
 

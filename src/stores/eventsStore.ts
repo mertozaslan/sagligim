@@ -164,40 +164,30 @@ export const useEventsStore = create<EventsState & EventsActions>((set, get) => 
   },
 
   registerForEvent: async (eventId: string, registrationData?: any) => {
-    set({ loading: true, error: null });
     try {
       const { event } = await eventsService.registerForEvent(eventId, registrationData);
       set(state => ({
         events: state.events.map(e => 
           e._id === eventId ? { ...e, isRegistered: true, currentParticipants: event.currentParticipants } : e
         ),
-        currentEvent: state.currentEvent?._id === eventId ? { ...state.currentEvent, isRegistered: true, currentParticipants: event.currentParticipants } : state.currentEvent,
-        loading: false
+        currentEvent: state.currentEvent?._id === eventId ? { ...state.currentEvent, isRegistered: true, currentParticipants: event.currentParticipants } : state.currentEvent
       }));
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Etkinliğe kayıt olurken hata oluştu',
-        loading: false
-      });
+      throw error instanceof Error ? error : new Error('Etkinliğe kayıt olurken hata oluştu');
     }
   },
 
   unregisterFromEvent: async (eventId: string) => {
-    set({ loading: true, error: null });
     try {
       const { event } = await eventsService.unregisterFromEvent(eventId);
       set(state => ({
         events: state.events.map(e => 
           e._id === eventId ? { ...e, isRegistered: false, currentParticipants: event.currentParticipants } : e
         ),
-        currentEvent: state.currentEvent?._id === eventId ? { ...state.currentEvent, isRegistered: false, currentParticipants: event.currentParticipants } : state.currentEvent,
-        loading: false
+        currentEvent: state.currentEvent?._id === eventId ? { ...state.currentEvent, isRegistered: false, currentParticipants: event.currentParticipants } : state.currentEvent
       }));
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Etkinlik kaydı iptal edilirken hata oluştu',
-        loading: false
-      });
+      throw error instanceof Error ? error : new Error('Etkinlik kaydı iptal edilirken hata oluştu');
     }
   },
 

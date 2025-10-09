@@ -17,17 +17,36 @@ export interface LoginData {
   password: string;
 }
 
+export interface DoctorInfo {
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  specialization?: string;
+  experience?: number;
+  license?: string;
+  hospital?: string;
+  location?: string;
+}
+
 export interface User {
-  id: string;
+  _id: string;
+  id?: string; // Backward compatibility için optional
   username: string;
   email: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  gender: 'male' | 'female' | 'other';
-  phone: string;
+  gender?: 'male' | 'female' | 'other';
+  phone?: string;
   role: string;
   isActive: boolean;
+  isVerified: boolean;
+  profilePicture?: string;
+  bio?: string;
+  doctorInfo?: DoctorInfo;
+  doctorApprovalStatus?: string;
+  followers?: any[];
+  following?: any[];
+  medicalConditions?: string[];
+  lastLogin?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,8 +63,60 @@ export interface RegisterResponse {
   user: User;
 }
 
+export interface ProfileStats {
+  totalPosts: number;
+  totalComments: number;
+  totalLikedPosts: number;
+  totalBlogs: number;
+  publishedBlogs: number;
+  totalCreatedEvents: number;
+  totalParticipatingEvents: number;
+}
+
+export interface RecentPost {
+  _id: string;
+  title: string;
+  category: string;
+  likes: any[];
+  dislikes: any[];
+  views: number;
+  createdAt: string;
+}
+
+export interface RecentBlog {
+  _id: string;
+  title: string;
+  category: string;
+  isPublished: boolean;
+  isFeatured: boolean;
+  likes: any[];
+  views: number;
+  createdAt: string;
+  likesCount: number;
+  dislikesCount: number;
+  id: string;
+}
+
+export interface RecentEvent {
+  _id: string;
+  title: string;
+  category: string;
+  date: string;
+  maxParticipants: number;
+  currentParticipants: number;
+  status: string;
+  createdAt: string;
+}
+
 export interface ProfileResponse {
   user: User;
+  stats: ProfileStats;
+  recentPosts: RecentPost[];
+  recentComments: any[];
+  recentLikedPosts: any[];
+  recentBlogs: RecentBlog[];
+  createdEvents: RecentEvent[];
+  participatingEvents: RecentEvent[];
 }
 
 export interface RefreshResponse {
@@ -85,7 +156,7 @@ export const authService = {
   },
 
   // Kullanıcı profili getir
-  async getProfile(): Promise<User> {
+  async getProfile(): Promise<ProfileResponse> {
     try {
       return await authApi.getProfile();
     } catch (error: any) {
@@ -141,7 +212,8 @@ export const authService = {
   // Profil güncelleme
   async updateProfile(userData: Partial<User>): Promise<User> {
     try {
-      return await api.put<User>('/api/auth/profile', userData);
+      const response = await api.put<{ user: User }>('/api/auth/profile', userData) as unknown as { user: User };
+      return response.user;
     } catch (error: any) {
       const errorMessage = handleApiError(error);
       throw new Error(errorMessage);

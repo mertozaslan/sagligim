@@ -4,7 +4,7 @@ Bu dokümantasyon, SaglikHep API'sinin yorum yönetimi endpoint'lerini açıklar
 
 ## Base URL
 ```
-http://localhost:3000/api/comments
+https://api.saglikhep.com/api/comments
 ```
 
 ## Endpoint'ler
@@ -65,7 +65,7 @@ Authorization: Bearer <jwt_token>
 const createComment = async (postId, commentData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/comments/${postId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${postId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -169,7 +169,7 @@ const getPostComments = async (postId, filters = {}) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`http://localhost:3000/api/comments/${postId}?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${postId}?${queryParams}`, {
       method: 'GET',
       headers
     });
@@ -223,7 +223,7 @@ Authorization: Bearer <jwt_token>
 const updateComment = async (commentId, commentData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/comments/${commentId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${commentId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -269,7 +269,7 @@ Authorization: Bearer <jwt_token>
 const deleteComment = async (commentId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/comments/${commentId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${commentId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -316,7 +316,7 @@ Authorization: Bearer <jwt_token>
 const toggleLike = async (commentId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/comments/${commentId}/like`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${commentId}/like`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -363,7 +363,7 @@ Authorization: Bearer <jwt_token>
 const toggleDislike = async (commentId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/comments/${commentId}/dislike`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${commentId}/dislike`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -416,7 +416,7 @@ Authorization: Bearer <jwt_token>
 const reportComment = async (commentId, reportData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/comments/${commentId}/report`, {
+    const response = await fetch(`https://api.saglikhep.com/api/comments/${commentId}/report`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

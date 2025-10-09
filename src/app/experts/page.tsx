@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import UserCard from '@/components/UserCard';
 import Button from '@/components/ui/Button';
+import ExpertInfoModal from '@/components/ExpertInfoModal';
 import { useExpertsStore } from '@/stores/expertsStore';
 
 export default function ExpertsPage() {
@@ -23,13 +25,9 @@ export default function ExpertsPage() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [selectedHospital, setSelectedHospital] = useState<string>('');
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  // Sayfa yüklendiğinde uzmanları getir
-  useEffect(() => {
-    fetchExperts();
-  }, []);
-
-  // Arama değiştiğinde debounce ile API çağrısı yap
+  // Arama ve filtreler değiştiğinde debounce ile API çağrısı yap
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       updateFilters({
@@ -283,7 +281,9 @@ export default function ExpertsPage() {
                       id: expert._id,
                       username: expert.username,
                       name: `Dr. ${expert.firstName} ${expert.lastName}`,
-                      avatar: expert.profilePicture || '/default-avatar.png',
+                      avatar: expert.profilePicture 
+                        ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${expert.profilePicture}`
+                        : '/default-avatar.png',
                       specialty: expert.doctorInfo.specialization,
                       title: expert.doctorInfo.specialization,
                       city: expert.doctorInfo.location,
@@ -345,18 +345,21 @@ export default function ExpertsPage() {
                 Bilginizi paylaşın, sorulara cevap verin ve kariyerinizi büyütün.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center">
-                <Button 
-                  size="lg" 
-                  className="bg-white !text-blue-600 hover:bg-blue-50 flex items-center justify-center"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Uzman Başvurusu Yap
-                </Button>
+                <Link href="/register?role=doctor">
+                  <Button 
+                    size="lg" 
+                    className="bg-white !text-blue-600 hover:bg-blue-50 flex items-center justify-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Uzman Başvurusu Yap
+                  </Button>
+                </Link>
                 <Button 
                   variant="outline" 
                   size="lg"
+                  onClick={() => setIsInfoModalOpen(true)}
                   className="border-white text-white hover:bg-white hover:text-blue-600"
                 >
                   Daha Fazla Bilgi
@@ -395,6 +398,12 @@ export default function ExpertsPage() {
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white opacity-10 transform translate-x-32 -translate-y-32"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-white opacity-10 transform -translate-x-24 translate-y-24"></div>
       </section>
+
+      {/* Expert Info Modal */}
+      <ExpertInfoModal 
+        isOpen={isInfoModalOpen} 
+        onClose={() => setIsInfoModalOpen(false)} 
+      />
     </div>
   );
 } 

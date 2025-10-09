@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
+import Toast from '@/components/ui/Toast';
 import { authService, LoginData } from '@/services/auth';
 
 export default function LoginPage() {
@@ -15,6 +16,7 @@ export default function LoginPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -30,9 +32,28 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Validasyon
-      if (!formData.email || !formData.password) {
-        setError('E-posta ve şifre alanları gereklidir.');
+      // Client-side validasyon
+      if (!formData.email.trim()) {
+        const errorMsg = 'E-posta adresi gereklidir.';
+        setError(errorMsg);
+        setToast({ message: errorMsg, type: 'error' });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        const errorMsg = 'Geçerli bir e-posta adresi girin.';
+        setError(errorMsg);
+        setToast({ message: errorMsg, type: 'error' });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!formData.password) {
+        const errorMsg = 'Şifre alanı gereklidir.';
+        setError(errorMsg);
+        setToast({ message: errorMsg, type: 'error' });
+        setIsLoading(false);
         return;
       }
 
@@ -52,15 +73,43 @@ export default function LoginPage() {
         localStorage.setItem('isAdmin', 'true');
       }
       
+      // Başarı mesajı göster
+      setError('');
+      setToast({
+        message: 'Giriş başarılı! Ana sayfaya yönlendiriliyorsunuz...',
+        type: 'success'
+      });
+      
       // Auth değişikliği event'ini dispatch et
       window.dispatchEvent(new CustomEvent('authChange'));
       
-      // Ana sayfaya yönlendir
-      router.push('/');
+      // 1.5 saniye sonra yönlendir
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
       
     } catch (error: any) {
       console.error('Giriş hatası:', error);
-      setError(error.message || 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
+      
+      // API'dan gelen hata mesajlarını işle
+      let errorMsg = '';
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        // Validation hataları
+        errorMsg = error.response.data.errors
+          .map((err: any) => err.message)
+          .join(', ');
+      } else if (error.response?.data?.message) {
+        // Genel API hatası
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        // Network veya diğer hatalar
+        errorMsg = error.message;
+      } else {
+        errorMsg = 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.';
+      }
+      
+      setError(errorMsg);
+      setToast({ message: errorMsg, type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +117,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">

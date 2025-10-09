@@ -2,11 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
-import { useQuestionsStore, useEventsStore } from '@/stores';
+import Toast from '@/components/ui/Toast';
+import ShareModal from '@/components/ShareModal';
+import { useQuestionsStore, useEventsStore, useExpertsStore } from '@/stores';
 import { Post, CreatePostData } from '@/services/posts';
 import type { Event } from '@/services/events';
+import { uploadService } from '@/services/upload';
 
 // Post ve Comment interface'leri artık services'den import ediliyor
 
@@ -40,11 +44,21 @@ export default function CommunityPage() {
     error: eventsError,
     fetchEvents
   } = useEventsStore();
+
+  // Experts store
+  const {
+    experts,
+    isLoading: expertsLoading,
+    error: expertsError,
+    fetchExperts
+  } = useExpertsStore();
   
   const [users, setUsers] = useState<User[]>([]);
   const [featuredEvent, setFeaturedEvent] = useState<Event | null>(null);
   const [selectedType, setSelectedType] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   
   // Post creation state
   const [isCreateExpanded, setIsCreateExpanded] = useState(false);
@@ -64,43 +78,55 @@ export default function CommunityPage() {
     'beslenme', 'egzersiz', 'mental-sağlık', 'kalp-sağlığı', 'diyabet', 
     'kilo-yönetimi', 'uyku', 'stres', 'motivasyon', 'başarı-hikayesi'
   ]);
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [sharePost, setSharePost] = useState<Post | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
+      setInitialLoading(true);
       try {
-        // Yeni API'den soruları yükle
-        try {
-          await fetchQuestions({
+        // Tüm API çağrılarını paralel olarak yap
+        await Promise.all([
+          // Posts yükle
+          fetchQuestions({
             page: 1,
             limit: 20,
             sortBy: 'createdAt',
             sortOrder: 'desc'
-          });
-        } catch (apiError) {
-          console.warn('API\'den veri yüklenemedi, fallback data kullanılıyor:', apiError);
-          // API hatası durumunda boş array ile devam et
-        }
-
-        // Users için hala dummy data kullanıyoruz, events için API
-        try {
-          // Users için JSON'dan dummy data
-          const usersResponse = await fetch('/data/users.json');
-          const usersData = await usersResponse.json();
-          setUsers(usersData);
-
-          // Events için API'den veri al
-          await fetchEvents({
+          }).catch(apiError => {
+            console.warn('API\'den veri yüklenemedi:', apiError);
+          }),
+          
+          // Events yükle
+          fetchEvents({
             page: 1,
             limit: 10,
             sortBy: 'date',
             sortOrder: 'asc'
-          });
-        } catch (dummyError) {
-          console.warn('Dummy data yüklenemedi:', dummyError);
-        }
-        
+          }).catch(eventError => {
+            console.warn('Events yüklenemedi:', eventError);
+          }),
+
+          // Experts yükle
+          fetchExperts({ limit: 3 }).catch(expertsError => {
+            console.warn('Experts yüklenemedi:', expertsError);
+          }),
+          
+          // Users yükle
+          fetch('/data/users.json')
+            .then(res => res.json())
+            .then(usersData => setUsers(usersData))
+            .catch(error => {
+              console.warn('Users yüklenemedi:', error);
+            })
+        ]);
       } catch (error) {
         console.error('Topluluk verileri yüklenirken hata:', error);
+      } finally {
+        setInitialLoading(false);
       }
     };
 
@@ -121,14 +147,17 @@ export default function CommunityPage() {
   // Post kategorileri (API'ye göre)
   const postCategories = [
     { value: 'diabetes', label: 'Diyabet', icon: '🩸', color: 'blue' },
-    { value: 'heart-disease', label: 'Kalp Hastalıkları', icon: '❤️', color: 'red' },
+    { value: 'heart-disease', label: 'Kalp Hastalıkları', icon: '🫀', color: 'red' },
     { value: 'cancer', label: 'Kanser', icon: '🎗️', color: 'pink' },
     { value: 'mental-health', label: 'Ruh Sağlığı', icon: '🧠', color: 'purple' },
     { value: 'arthritis', label: 'Artrit', icon: '🦴', color: 'orange' },
     { value: 'asthma', label: 'Astım', icon: '🫁', color: 'cyan' },
-    { value: 'digestive', label: 'Sindirim', icon: '🫀', color: 'green' },
+    { value: 'digestive', label: 'Sindirim', icon: '🍏', color: 'green' },
     { value: 'neurological', label: 'Nörolojik', icon: '🧬', color: 'indigo' },
     { value: 'autoimmune', label: 'Otoimmün', icon: '🛡️', color: 'yellow' },
+    { value: 'experience', label: 'Deneyim', icon: '✨', color: 'teal' },
+    { value: 'curiosity', label: 'Merak', icon: '🤔', color: 'lime' },
+    { value: 'success-story', label: 'Başarı Hikayesi', icon: '🏆', color: 'amber' },
     { value: 'other', label: 'Diğer', icon: '💭', color: 'gray' }
   ];
 
@@ -179,6 +208,12 @@ export default function CommunityPage() {
     await dislikeQuestion(postId);
   };
 
+  // Paylaşım modalını aç
+  const handleShare = (post: Post) => {
+    setSharePost(post);
+    setShareModalOpen(true);
+  };
+
   // Post creation handlers
   const handleExpandCreate = () => {
     setIsCreateExpanded(true);
@@ -198,6 +233,8 @@ export default function CommunityPage() {
       symptoms: [],
       treatments: []
     });
+    setSelectedFile(null);
+    setCustomTagInput('');
   };
 
   const handleTagToggle = (tag: string) => {
@@ -209,18 +246,159 @@ export default function CommunityPage() {
     }));
   };
 
+  const handleAddCustomTag = () => {
+    const trimmedTag = customTagInput.trim().toLowerCase();
+    
+    // Validasyonlar
+    if (!trimmedTag) {
+      setToast({ message: 'Etiket boş olamaz!', type: 'error' });
+      return;
+    }
+
+    if (trimmedTag.length < 1 || trimmedTag.length > 50) {
+      setToast({ message: 'Etiket 1-50 karakter arasında olmalı!', type: 'error' });
+      return;
+    }
+
+    if (newPost.tags.length >= 10) {
+      setToast({ message: 'En fazla 10 etiket ekleyebilirsiniz!', type: 'error' });
+      return;
+    }
+
+    if (newPost.tags.includes(trimmedTag)) {
+      setToast({ message: 'Bu etiket zaten eklenmiş!', type: 'warning' });
+      return;
+    }
+
+    // Etiketi ekle
+    setNewPost(prev => ({
+      ...prev,
+      tags: [...prev.tags, trimmedTag]
+    }));
+    
+    setCustomTagInput('');
+    setToast({ message: `"${trimmedTag}" etiketi eklendi!`, type: 'success' });
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setNewPost(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tagToRemove)
+    }));
+  };
+
+  // Tek resim seçme
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) return;
+
+    // Validasyon
+    const validation = uploadService.validateFile(file);
+    if (!validation.valid) {
+      setToast({ message: validation.error!, type: 'error' });
+      return;
+    }
+
+    setSelectedFile(file);
+    setToast({ message: 'Resim seçildi!', type: 'success' });
+  };
+
+  // Seçili resmi kaldır
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+  };
+
+  // Resim yükle
+  const handleUploadImage = async (): Promise<string | null> => {
+    if (!selectedFile) return null;
+
+    try {
+      setIsUploadingImage(true);
+      const response = await uploadService.uploadSingle(selectedFile);
+      setToast({ message: 'Resim başarıyla yüklendi!', type: 'success' });
+      return response.imageUrl;
+    } catch (error: any) {
+      setToast({ message: error.message || 'Resim yükleme başarısız!', type: 'error' });
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleCreatePost = async () => {
-    if (!newPost.title.trim() || !newPost.content.trim()) {
-      alert('Başlık ve içerik alanları boş olamaz!');
+    // Client-side validasyon - Backend kurallarına uygun
+    if (!newPost.title.trim()) {
+      setToast({ message: 'Başlık alanı boş olamaz!', type: 'error' });
+      return;
+    }
+
+    if (newPost.title.length < 5 || newPost.title.length > 200) {
+      setToast({ message: 'Başlık 5-200 karakter arasında olmalı!', type: 'error' });
+      return;
+    }
+
+    if (!newPost.content.trim()) {
+      setToast({ message: 'İçerik alanı boş olamaz!', type: 'error' });
+      return;
+    }
+
+    if (newPost.content.length < 10 || newPost.content.length > 5000) {
+      setToast({ message: 'İçerik 10-5000 karakter arasında olmalı!', type: 'error' });
+      return;
+    }
+
+    // Tags validasyonu
+    if (newPost.tags.length > 10) {
+      setToast({ message: 'En fazla 10 etiket ekleyebilirsiniz!', type: 'error' });
+      return;
+    }
+
+    // Her etiketin uzunluğunu kontrol et
+    const invalidTag = newPost.tags.find(tag => tag.length < 1 || tag.length > 50);
+    if (invalidTag) {
+      setToast({ message: 'Her etiket 1-50 karakter arasında olmalı!', type: 'error' });
       return;
     }
 
     try {
-      await createQuestion(newPost);
+      // Önce resim yükle (varsa)
+      let uploadedImageUrl: string | null = null;
+      if (selectedFile) {
+        setToast({ message: 'Resim yükleniyor...', type: 'info' });
+        uploadedImageUrl = await handleUploadImage();
+      }
+
+      // Post'u oluştur
+      const postDataWithImage = {
+        ...newPost,
+        images: uploadedImageUrl ? [uploadedImageUrl] : []
+      };
+
+      await createQuestion(postDataWithImage);
       handleCollapseCreate();
-    } catch (error) {
+      setToast({ message: 'Paylaşım başarıyla oluşturuldu! 🎉', type: 'success' });
+    } catch (error: any) {
       console.error('Post oluşturma hatası:', error);
-      alert('Post oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+      
+      // API'dan gelen hata mesajlarını işle
+      let errorMsg = '';
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        // Validation hataları
+        errorMsg = error.response.data.errors
+          .map((err: any) => `${err.field}: ${err.message}`)
+          .join(', ');
+      } else if (error.response?.data?.message) {
+        // Genel API hatası
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        // Network veya diğer hatalar
+        errorMsg = error.message;
+      } else {
+        errorMsg = 'Post oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.';
+      }
+      
+      setToast({ message: errorMsg, type: 'error' });
     }
   };
 
@@ -260,7 +438,7 @@ export default function CommunityPage() {
     return icons[category] || '📅';
   };
 
-  if (loading || eventsLoading) {
+  if (initialLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -271,18 +449,22 @@ export default function CommunityPage() {
     );
   }
 
-  if (error || eventsError) {
+  if (error && posts.length === 0) {
     console.error('Topluluk verileri yüklenirken hata:', error);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😞</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Bir hata oluştu</h2>
-          <p className="text-gray-600 mb-6">{error || eventsError}</p>
+          <p className="text-gray-600 mb-6">{error}</p>
           <Button 
-            onClick={() => {
-              fetchQuestions();
-              fetchEvents();
+            onClick={async () => {
+              setInitialLoading(true);
+              await Promise.all([
+                fetchQuestions().catch(() => {}),
+                fetchEvents().catch(() => {})
+              ]);
+              setInitialLoading(false);
             }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-6 py-3"
           >
@@ -295,6 +477,28 @@ export default function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {sharePost && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setSharePost(null);
+          }}
+          url={`${typeof window !== 'undefined' ? window.location.origin : ''}/posts/${sharePost._id}`}
+          title={sharePost.title}
+          description={sharePost.content.substring(0, 200)}
+        />
+      )}
 
       {/* Elegant Filter Bar */}
       <div className="bg-white/60 backdrop-blur-xl border-b border-white/20">
@@ -474,11 +678,15 @@ export default function CommunityPage() {
                       onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="Paylaşımına çekici bir başlık ver..."
                       className="w-full p-4 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-all text-lg font-medium"
-                      maxLength={100}
+                      maxLength={200}
                     />
                     <div className="flex justify-between mt-1">
-                      <span className="text-xs text-gray-500">Maksimum 100 karakter</span>
-                      <span className="text-xs text-gray-500">{newPost.title.length}/100</span>
+                      <span className="text-xs text-gray-500">5-200 karakter arası</span>
+                      <span className={`text-xs font-medium ${
+                        newPost.title.length < 5 || newPost.title.length > 200 
+                          ? 'text-red-500' 
+                          : 'text-green-600'
+                      }`}>{newPost.title.length}/200</span>
                     </div>
                   </div>
 
@@ -493,11 +701,15 @@ export default function CommunityPage() {
                       placeholder="Deneyimini, sorununu veya düşüncelerini detaylıca anlat..."
                       className="w-full p-4 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none resize-none transition-all text-base leading-relaxed"
                       rows={6}
-                      maxLength={1000}
+                      maxLength={5000}
                     />
                     <div className="flex justify-between mt-1">
-                      <span className="text-xs text-gray-500">Detaylı ve yararlı bilgi paylaş</span>
-                      <span className="text-xs text-gray-500">{newPost.content.length}/1000</span>
+                      <span className="text-xs text-gray-500">10-5000 karakter arası</span>
+                      <span className={`text-xs font-medium ${
+                        newPost.content.length < 10 || newPost.content.length > 5000 
+                          ? 'text-red-500' 
+                          : 'text-green-600'
+                      }`}>{newPost.content.length}/5000</span>
                     </div>
                   </div>
 
@@ -548,14 +760,16 @@ export default function CommunityPage() {
                   {/* Tags Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      🏷️ Etiketler (Max 5)
+                      🏷️ Etiketler (Max 10)
                     </label>
+                    
+                    {/* Önceden tanımlı etiketler */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {availableTags.map((tag) => (
                         <button
                           key={tag}
                           onClick={() => handleTagToggle(tag)}
-                          disabled={!newPost.tags.includes(tag) && newPost.tags.length >= 5}
+                          disabled={!newPost.tags.includes(tag) && newPost.tags.length >= 10}
                           className={`px-3 py-2 rounded-2xl border transition-all ${
                             newPost.tags.includes(tag)
                               ? 'border-green-500 bg-gradient-to-r from-green-50 to-teal-50 text-green-700 font-medium'
@@ -566,14 +780,112 @@ export default function CommunityPage() {
                         </button>
                       ))}
                     </div>
+
+                    {/* Özel etiket ekleme */}
+                    <div className="mb-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={customTagInput}
+                          onChange={(e) => setCustomTagInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomTag();
+                            }
+                          }}
+                          placeholder="Özel etiket ekle..."
+                          className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-all text-sm"
+                          maxLength={50}
+                          disabled={newPost.tags.length >= 10}
+                        />
+                        <Button
+                          onClick={handleAddCustomTag}
+                          disabled={!customTagInput.trim() || newPost.tags.length >= 10}
+                          variant="outline"
+                          className="rounded-2xl border-2 px-6"
+                        >
+                          Ekle
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter tuşuna basarak veya &quot;Ekle&quot; butonuna tıklayarak özel etiket ekleyebilirsiniz
+                      </p>
+                    </div>
+
+                    {/* Seçilen etiketler */}
                     {newPost.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-2xl">
                         <span className="text-sm font-medium text-green-700">Seçilen etiketler:</span>
                         {newPost.tags.map((tag) => (
-                          <span key={tag} className="px-2 py-1 bg-green-200 text-green-800 rounded-xl text-sm font-medium">
+                          <span 
+                            key={tag} 
+                            className="px-2 py-1 bg-green-200 text-green-800 rounded-xl text-sm font-medium flex items-center gap-1 group"
+                          >
                             #{tag}
+                            <button
+                              onClick={() => handleRemoveTag(tag)}
+                              className="ml-1 text-green-600 hover:text-green-800 font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
                           </span>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resim Yükleme */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      📷 Resim
+                    </label>
+                    
+                    {/* Resim seçme butonu */}
+                    {!selectedFile ? (
+                      <div>
+                        <input
+                          type="file"
+                          id="image-upload"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="image-upload"
+                          className="flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 rounded-2xl transition-all cursor-pointer"
+                        >
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-sm font-medium text-blue-700">
+                            Resim Seç (JPG, PNG, GIF, WEBP)
+                          </span>
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Maksimum 5MB boyutunda resim yükleyebilirsiniz
+                        </p>
+                      </div>
+                    ) : (
+                      /* Seçilen resim önizleme */
+                      <div className="relative group">
+                        <div className="relative rounded-xl overflow-hidden border-2 border-white shadow-lg" style={{ height: '250px' }}>
+                          <Image
+                            src={URL.createObjectURL(selectedFile)}
+                            alt="Preview"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <button
+                          onClick={handleRemoveFile}
+                          className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                        >
+                          ×
+                        </button>
+                        <p className="text-xs text-gray-600 mt-2 truncate">
+                          {selectedFile.name}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -598,11 +910,28 @@ export default function CommunityPage() {
                       </Button>
                       <Button 
                         onClick={handleCreatePost}
-                        disabled={!newPost.title.trim() || !newPost.content.trim()}
+                        disabled={
+                          isUploadingImage ||
+                          !newPost.title.trim() || 
+                          !newPost.content.trim() || 
+                          newPost.title.length < 5 || 
+                          newPost.title.length > 200 ||
+                          newPost.content.length < 10 ||
+                          newPost.content.length > 5000
+                        }
                         className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <span className="mr-2">🚀</span>
-                        Paylaş
+                        {isUploadingImage ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                            Yükleniyor...
+                          </>
+                        ) : (
+                          <>
+                            <span className="mr-2">🚀</span>
+                            Paylaş
+                          </>
+                        )}
             </Button>
           </div>
         </div>
@@ -660,7 +989,11 @@ export default function CommunityPage() {
                         <div className="flex items-center space-x-4 mb-5">
                           <div className="relative">
                             <Avatar
-                              src={post.isAnonymous ? `https://ui-avatars.com/api/?name=Anonim&background=6b7280&color=fff` : author.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
+                              src={post.isAnonymous 
+                                ? `https://ui-avatars.com/api/?name=Anonim&background=6b7280&color=fff` 
+                                : author.profilePicture 
+                                  ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${author.profilePicture}`
+                                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
                               alt={post.isAnonymous ? 'Anonim Kullanıcı' : `${author.firstName} ${author.lastName}`}
                               size="lg"
                             />
@@ -699,6 +1032,9 @@ export default function CommunityPage() {
                               post.category === 'digestive' ? 'bg-green-100 text-green-700' :
                               post.category === 'neurological' ? 'bg-indigo-100 text-indigo-700' :
                               post.category === 'autoimmune' ? 'bg-yellow-100 text-yellow-700' :
+                              post.category === 'experience' ? 'bg-teal-100 text-teal-700' :
+                              post.category === 'curiosity' ? 'bg-lime-100 text-lime-700' :
+                              post.category === 'success-story' ? 'bg-amber-100 text-amber-700' :
                               'bg-gray-100 text-gray-700'
                             }`}>
                               <span>{getCategoryIcon(post.category)}</span>
@@ -720,14 +1056,40 @@ export default function CommunityPage() {
 
                         {/* Content Area - Instagram Style */}
                         <div className="mb-5">
+                          {/* Başlık */}
                           <Link href={`/posts/${post._id}`}>
                             <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 cursor-pointer transition-colors line-clamp-2">
                               {post.title}
                             </h2>
                           </Link>
+                          
+                          {/* Post Images */}
+                          {post.images && post.images.length > 0 && (
+                            <Link href={`/posts/${post._id}`}>
+                              <div className="relative mb-4 rounded-xl overflow-hidden cursor-pointer group" style={{ height: '200px' }}>
+                                <Image
+                                  src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${post.images[0]}`}
+                                  alt={post.title}
+                                  fill
+                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                {post.images.length > 1 && (
+                                  <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center space-x-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>+{post.images.length - 1}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </Link>
+                          )}
+
+                          {/* İçerik */}
                           <div className="text-gray-700 leading-relaxed">
                             <p className="line-clamp-4">{post.content}</p>
                           </div>
+                          
                           {post.content.length > 200 && (
                             <Link href={`/posts/${post._id}`}>
                               <button className="text-blue-600 text-sm font-medium mt-2 hover:text-blue-800 transition-colors">
@@ -841,13 +1203,12 @@ export default function CommunityPage() {
 
                           {/* Quick Actions */}
                           <div className="flex items-center space-x-1">
-                            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                              </svg>
-                            </button>
-                            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button 
+                              onClick={() => handleShare(post)}
+                              className="p-2 hover:bg-blue-50 rounded-full transition-colors group"
+                              title="Paylaş"
+                            >
+                              <svg className="w-4 h-4 text-gray-600 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                               </svg>
                             </button>
@@ -940,6 +1301,84 @@ export default function CommunityPage() {
               </div>
               )}
 
+              {/* Öne Çıkan Uzmanlar */}
+              <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-xl shadow-blue-500/10">
+                <h3 className="font-bold text-lg text-gray-900 mb-4 flex items-center">
+                  <span className="w-2 h-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-full mr-3"></span>
+                  Öne Çıkan Uzmanlar
+                </h3>
+                <p className="text-gray-600 mb-6 text-sm">Platformumuzun en deneyimli doktorları</p>
+                <div className="space-y-4">
+                  {expertsLoading ? (
+                    // Loading state
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 animate-pulse">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : expertsError ? (
+                    <div className="text-center py-4">
+                      <p className="text-red-500 text-sm">Uzmanlar yüklenemedi</p>
+                    </div>
+                  ) : experts.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500 text-sm">Henüz uzman bulunmuyor</p>
+                    </div>
+                  ) : (
+                    experts.slice(0, 3).map((expert, index) => (
+                      <div key={expert._id} className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative">
+                            <Link href={`/profil/${expert.username}`}>
+                              <Avatar
+                                src={expert.profilePicture 
+                                  ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${expert.profilePicture}`
+                                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(expert.firstName + ' ' + expert.lastName)}&background=10b981&color=fff`}
+                                alt={`Dr. ${expert.firstName} ${expert.lastName}`}
+                                size="md"
+                                className="cursor-pointer hover:ring-4 hover:ring-blue-100 transition-all duration-300"
+                              />
+                            </Link>
+                            {expert.isVerified && expert.doctorInfo.approvalStatus === 'approved' && (
+                              <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
+                                <span className="text-white text-xs">✓</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <Link href={`/profil/${expert.username}`}>
+                                <p className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                                  Dr. {expert.firstName} {expert.lastName}
+                                </p>
+                              </Link>
+                              {expert.isVerified && expert.doctorInfo.approvalStatus === 'approved' && (
+                                <span className="ml-2 text-blue-500">✓</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">{expert.doctorInfo.specialization}</p>
+                            <p className="text-xs text-gray-500 mt-1">{expert.doctorInfo.experience} yıl deneyim</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <Link href="/experts">
+                    <Button variant="outline" className="w-full border-2 border-gray-300 hover:border-blue-500 hover:text-blue-500">
+                      <span className="mr-2">👥</span>
+                      Tüm Uzmanları Görüntüle
+                    </Button>
+                  </Link>
+                </div>
+              </div>
 
             </div>
           </div>

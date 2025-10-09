@@ -4,7 +4,7 @@ Bu dokümantasyon, SaglikHep API'sinin post yönetimi endpoint'lerini açıklar.
 
 ## Base URL
 ```
-http://localhost:3000/api/posts
+https://api.saglikhep.com/api/posts
 ```
 
 ## Endpoint'ler
@@ -78,7 +78,7 @@ Authorization: Bearer <jwt_token>
 const createPost = async (postData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/api/posts', {
+    const response = await fetch('https://api.saglikhep.com/api/posts', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -176,7 +176,7 @@ const getAllPosts = async (filters = {}) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`http://localhost:3000/api/posts?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts?${queryParams}`, {
       method: 'GET',
       headers
     });
@@ -272,7 +272,7 @@ const getPostById = async (postId) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/${postId}`, {
       method: 'GET',
       headers
     });
@@ -351,7 +351,7 @@ Authorization: Bearer <jwt_token>
 const updatePost = async (postId, postData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/${postId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -397,7 +397,7 @@ Authorization: Bearer <jwt_token>
 const deletePost = async (postId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/${postId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -444,7 +444,7 @@ Authorization: Bearer <jwt_token>
 const toggleLike = async (postId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/${postId}/like`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -491,7 +491,7 @@ Authorization: Bearer <jwt_token>
 const toggleDislike = async (postId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/posts/${postId}/dislike`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/${postId}/dislike`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -544,7 +544,7 @@ Authorization: Bearer <jwt_token>
 const reportPost = async (postId, reportData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/posts/${postId}/report`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/${postId}/report`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -640,7 +640,7 @@ const getUserPosts = async (userId, filters = {}) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`http://localhost:3000/api/posts/user/${userId}?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/posts/user/${userId}?${queryParams}`, {
       method: 'GET',
       headers
     });

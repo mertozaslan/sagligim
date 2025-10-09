@@ -4,7 +4,7 @@ Bu dokümantasyon, SaglikHep API'sinin etkinlik yönetimi endpoint'lerini açık
 
 ## Base URL
 ```
-http://localhost:3000/api/events
+https://api.saglikhep.com/api/events
 ```
 
 ## Endpoint'ler
@@ -91,7 +91,7 @@ Authorization: Bearer <jwt_token>
 const createEvent = async (eventData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/api/events', {
+    const response = await fetch('https://api.saglikhep.com/api/events', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -190,7 +190,7 @@ const getAllEvents = async (filters = {}) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`http://localhost:3000/api/events?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events?${queryParams}`, {
       method: 'GET',
       headers
     });
@@ -261,7 +261,7 @@ const searchEvents = async (searchTerm, filters = {}) => {
       ...filters
     }).toString();
     
-    const response = await fetch(`http://localhost:3000/api/events/search?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/search?${queryParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ Authorization: Bearer <jwt_token>
 const getEventStats = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/api/events/stats', {
+    const response = await fetch('https://api.saglikhep.com/api/events/stats', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -409,7 +409,7 @@ const getUserEvents = async (filters = {}) => {
   try {
     const token = localStorage.getItem('token');
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`http://localhost:3000/api/events/my-events?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/my-events?${queryParams}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -494,7 +494,7 @@ const getEventById = async (eventId) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}`, {
       method: 'GET',
       headers
     });
@@ -556,7 +556,7 @@ Authorization: Bearer <jwt_token>
 const updateEvent = async (eventId, eventData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -602,7 +602,7 @@ Authorization: Bearer <jwt_token>
 const deleteEvent = async (eventId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -667,7 +667,7 @@ Authorization: Bearer <jwt_token>
 const registerForEvent = async (eventId, registrationData = {}) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}/register`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}/register`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -719,7 +719,7 @@ Authorization: Bearer <jwt_token>
 const unregisterFromEvent = async (eventId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}/unregister`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}/unregister`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -791,7 +791,7 @@ const getEventParticipants = async (eventId, filters = {}) => {
   try {
     const token = localStorage.getItem('token');
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}/participants?${queryParams}`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}/participants?${queryParams}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -851,7 +851,7 @@ Authorization: Bearer <jwt_token>
 const approveEvent = async (eventId, actionData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}/approve`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}/approve`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -905,7 +905,7 @@ Authorization: Bearer <jwt_token>
 const reportEvent = async (eventId, reportData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/events/${eventId}/report`, {
+    const response = await fetch(`https://api.saglikhep.com/api/events/${eventId}/report`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

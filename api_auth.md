@@ -4,7 +4,7 @@ Bu dokümantasyon, SaglikHep API'sinin kimlik doğrulama (Authentication) endpoi
 
 ## Base URL
 ```
-http://localhost:3000/api/auth
+https://api.saglikhep.com/api/auth
 ```
 
 ## Endpoint'ler
@@ -50,7 +50,7 @@ Yeni kullanıcı kaydı oluşturur.
 ```javascript
 const registerUser = async (userData) => {
   try {
-    const response = await fetch('http://localhost:3000/api/auth/register', {
+    const response = await fetch('https://api.saglikhep.com/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ Kullanıcı girişi yapar ve JWT token döner.
 ```javascript
 const loginUser = async (credentials) => {
   try {
-    const response = await fetch('http://localhost:3000/api/auth/login', {
+    const response = await fetch('https://api.saglikhep.com/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ Süresi dolmuş token'ı yeniler.
 const refreshToken = async () => {
   try {
     const refreshToken = localStorage.getItem('refreshToken');
-    const response = await fetch('http://localhost:3000/api/auth/refresh', {
+    const response = await fetch('https://api.saglikhep.com/api/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ Authorization: Bearer <jwt_token>
 const getProfile = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/api/auth/profile', {
+    const response = await fetch('https://api.saglikhep.com/api/auth/profile', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -275,7 +275,7 @@ Authorization: Bearer <jwt_token>
 const logoutUser = async () => {
   try {
     const token = localStorage.getItem('token');
-    await fetch('http://localhost:3000/api/auth/logout', {
+    await fetch('https://api.saglikhep.com/api/auth/logout', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -1,13 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Button from '@/components/ui/Button';
+import Toast from '@/components/ui/Toast';
 import { authService } from '@/services/auth';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // URL parametresinden role'u al
+  const roleParam = searchParams.get('role');
+  const initialRole = (roleParam === 'doctor' ? 'doctor' : 'patient') as 'patient' | 'doctor';
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -17,7 +24,7 @@ export default function RegisterPage() {
     confirmPassword: '',
     dateOfBirth: '',
     gender: 'male' as 'male' | 'female' | 'other',
-    role: 'patient' as 'patient' | 'doctor',
+    role: initialRole,
     // Doctor specific fields
     location: '',
     specialization: '',
@@ -28,6 +35,10 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
+  
+  // Input refs for scrolling
+  const inputRefs = useRef<{[key: string]: HTMLInputElement | HTMLSelectElement | null}>({});
 
   const specialties = [
     'Kardiyoloji',
@@ -53,45 +64,91 @@ export default function RegisterPage() {
     }));
   };
 
+  // Hatalı inputa tıklandığında hatayı temizle
+  const handleFocus = (fieldName: string) => {
+    if (fieldErrors[fieldName]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  };
+
+  // İlk hatalı alana scroll yap
+  const scrollToFirstError = (errors: {[key: string]: string}) => {
+    const firstErrorField = Object.keys(errors)[0];
+    const inputElement = inputRefs.current[firstErrorField];
+    
+    if (inputElement) {
+      inputElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      inputElement.focus();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     setFieldErrors({});
 
-    // Client-side validasyon
+    // Client-side validasyon - Backend kurallarına uygun
     const errors: {[key: string]: string} = {};
 
-    if (!formData.firstName.trim()) {
-      errors.firstName = 'Ad alanı zorunludur.';
-    }
-
-    if (!formData.lastName.trim()) {
-      errors.lastName = 'Soyad alanı zorunludur.';
-    }
-
+    // Username validasyonu
     if (!formData.username.trim()) {
       errors.username = 'Kullanıcı adı zorunludur.';
+    } else if (formData.username.length < 3 || formData.username.length > 30) {
+      errors.username = 'Kullanıcı adı 3-30 karakter arasında olmalı.';
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      errors.username = 'Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.';
     }
 
+    // Email validasyonu
     if (!formData.email.trim()) {
       errors.email = 'E-posta adresi zorunludur.';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Geçerli bir e-posta adresi girin.';
     }
 
+    // Password validasyonu
     if (!formData.password) {
       errors.password = 'Şifre alanı zorunludur.';
     } else if (formData.password.length < 6) {
-      errors.password = 'Şifre en az 6 karakter olmalıdır.';
+      errors.password = 'Şifre en az 6 karakter olmalı.';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      errors.password = 'Şifre en az bir küçük harf, bir büyük harf ve bir rakam içermeli.';
     }
 
+    // Confirm password validasyonu
     if (!formData.confirmPassword) {
       errors.confirmPassword = 'Şifre tekrarı zorunludur.';
     } else if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Şifreler eşleşmiyor.';
     }
 
+    // First name validasyonu
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'Ad alanı zorunludur.';
+    } else if (formData.firstName.length < 2 || formData.firstName.length > 50) {
+      errors.firstName = 'Ad 2-50 karakter arasında olmalı.';
+    } else if (!/^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]+$/.test(formData.firstName)) {
+      errors.firstName = 'Ad sadece harf içerebilir.';
+    }
+
+    // Last name validasyonu
+    if (!formData.lastName.trim()) {
+      errors.lastName = 'Soyad alanı zorunludur.';
+    } else if (formData.lastName.length < 2 || formData.lastName.length > 50) {
+      errors.lastName = 'Soyad 2-50 karakter arasında olmalı.';
+    } else if (!/^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]+$/.test(formData.lastName)) {
+      errors.lastName = 'Soyad sadece harf içerebilir.';
+    }
+
+    // Terms validasyonu
     if (!formData.terms) {
       errors.terms = 'Kullanım şartlarını kabul etmelisiniz.';
     }
@@ -112,6 +169,12 @@ export default function RegisterPage() {
     // Eğer client-side hata varsa
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setError(`Form doğrulama hatası: ${Object.keys(errors).length} alan kontrol edilmeli.`);
+      setToast({
+        message: 'Lütfen formu eksiksiz ve doğru doldurun.',
+        type: 'error'
+      });
+      scrollToFirstError(errors);
       setIsLoading(false);
       return;
     }
@@ -141,8 +204,19 @@ export default function RegisterPage() {
       
       // Başarılı kayıt
       console.log('Kayıt başarılı:', response);
-      alert('Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...');
-      router.push('/login');
+      
+      // Başarı mesajı göster
+      setError('');
+      setFieldErrors({});
+      setToast({
+        message: 'Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...',
+        type: 'success'
+      });
+      
+      // 2 saniye sonra yönlendir
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
       
     } catch (error: any) {
       console.error('Kayıt hatası:', error);
@@ -151,7 +225,20 @@ export default function RegisterPage() {
       if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
         const apiErrors: {[key: string]: string} = {};
         error.response.data.errors.forEach((err: any) => {
-          apiErrors[err.field] = err.message;
+          // Field mapping - API'dan gelen field isimleri form field isimleriyle eşleştir
+          const fieldMap: {[key: string]: string} = {
+            'username': 'username',
+            'email': 'email',
+            'password': 'password',
+            'firstName': 'firstName',
+            'lastName': 'lastName',
+            'specialization': 'specialization',
+            'location': 'location',
+            'hospital': 'hospital'
+          };
+          
+          const mappedField = fieldMap[err.field] || err.field;
+          apiErrors[mappedField] = err.message;
         });
         setFieldErrors(apiErrors);
         
@@ -160,12 +247,27 @@ export default function RegisterPage() {
         const generalMessage = error.response.data.message;
         
         if (generalMessage && generalMessage !== 'Validation hatası') {
-          setError(`${generalMessage} (${errorCount} hata bulundu)`);
+          setError(generalMessage);
+          setToast({ message: generalMessage, type: 'error' });
         } else {
-          setError(`${errorCount} adet validation hatası bulundu. Lütfen formu kontrol edin.`);
+          const errorMsg = `Form doğrulama hatası: ${errorCount} alan kontrol edilmeli.`;
+          setError(errorMsg);
+          setToast({ message: errorMsg, type: 'error' });
         }
+        scrollToFirstError(apiErrors);
+      } else if (error.response?.data?.message) {
+        // Genel API hatası
+        const errorMsg = error.response.data.message;
+        setError(errorMsg);
+        setToast({ message: errorMsg, type: 'error' });
+      } else if (error.message) {
+        // Network veya diğer hatalar
+        setError(error.message);
+        setToast({ message: error.message, type: 'error' });
       } else {
-        setError(error.message || error.response?.data?.message || 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.');
+        const errorMsg = 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.';
+        setError(errorMsg);
+        setToast({ message: errorMsg, type: 'error' });
       }
     } finally {
       setIsLoading(false);
@@ -174,6 +276,15 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
@@ -257,13 +368,15 @@ export default function RegisterPage() {
                 Kullanıcı Adı *
               </label>
               <input
+                ref={(el) => { inputRefs.current.username = el; }}
                 id="username"
                 name="username"
                 type="text"
                 required
                 value={formData.username}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                onFocus={() => handleFocus('username')}
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   fieldErrors.username ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="kullanici_adi"
@@ -279,13 +392,15 @@ export default function RegisterPage() {
                 Ad *
               </label>
               <input
+                ref={(el) => { inputRefs.current.firstName = el; }}
                 id="firstName"
                 name="firstName"
                 type="text"
                 required
                 value={formData.firstName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                onFocus={() => handleFocus('firstName')}
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   fieldErrors.firstName ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Adınız"
@@ -301,13 +416,15 @@ export default function RegisterPage() {
                 Soyad *
               </label>
               <input
+                ref={(el) => { inputRefs.current.lastName = el; }}
                 id="lastName"
                 name="lastName"
                 type="text"
                 required
                 value={formData.lastName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                onFocus={() => handleFocus('lastName')}
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   fieldErrors.lastName ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Soyadınız"
@@ -323,13 +440,15 @@ export default function RegisterPage() {
                 E-posta adresi *
               </label>
               <input
+                ref={(el) => { inputRefs.current.email = el; }}
                 id="email"
                 name="email"
                 type="email"
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                onFocus={() => handleFocus('email')}
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   fieldErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="ornek@email.com"
@@ -348,11 +467,13 @@ export default function RegisterPage() {
                     Uzmanlık Alanı *
                   </label>
                   <select
+                    ref={(el) => { inputRefs.current.specialization = el; }}
                     id="specialization"
                     name="specialization"
                     value={formData.specialization}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    onFocus={() => handleFocus('specialization')}
+                    className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                       fieldErrors.specialization ? 'border-red-300 bg-red-50' : 'border-gray-300'
                     }`}
                   >
@@ -374,13 +495,15 @@ export default function RegisterPage() {
                     Konum *
                   </label>
                   <input
+                    ref={(el) => { inputRefs.current.location = el; }}
                     id="location"
                     name="location"
                     type="text"
                     required
                     value={formData.location}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    onFocus={() => handleFocus('location')}
+                    className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                       fieldErrors.location ? 'border-red-300 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="İstanbul, Türkiye"
@@ -396,13 +519,15 @@ export default function RegisterPage() {
                     Hastane/Kurum *
                   </label>
                   <input
+                    ref={(el) => { inputRefs.current.hospital = el; }}
                     id="hospital"
                     name="hospital"
                     type="text"
                     required
                     value={formData.hospital}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    onFocus={() => handleFocus('hospital')}
+                    className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                       fieldErrors.hospital ? 'border-red-300 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="Acıbadem Hastanesi"
@@ -498,13 +623,15 @@ export default function RegisterPage() {
                 Şifre *
               </label>
               <input
+                ref={(el) => { inputRefs.current.password = el; }}
                 id="password"
                 name="password"
                 type="password"
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                onFocus={() => handleFocus('password')}
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   fieldErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="En az 6 karakter"
@@ -520,13 +647,15 @@ export default function RegisterPage() {
                 Şifre Tekrar *
               </label>
               <input
+                ref={(el) => { inputRefs.current.confirmPassword = el; }}
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                onFocus={() => handleFocus('confirmPassword')}
+                className={`w-full px-3 py-2 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   fieldErrors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Şifrenizi tekrar girin"
@@ -593,42 +722,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Social Register */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Veya</span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span className="ml-2">Google</span>
-              </button>
-
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                <span className="ml-2">Facebook</span>
-              </button>
-            </div>
-          </div>
+   
 
           {/* Login Link */}
           <div className="text-center">
@@ -642,5 +736,20 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <p className="mt-4 text-gray-600">Yükleniyor...</p>
+        </div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 } 

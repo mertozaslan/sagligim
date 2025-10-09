@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
-// API Base URL
-const API_BASE_URL = 'https://api.saglikhep.com';
+// API Base URL - Environment variable'dan al
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.saglikhep.com';
 
 // Token yönetimi için yardımcı fonksiyonlar
 const getToken = (): string | null => {
@@ -314,7 +314,7 @@ export const authApi = {
   // Profil getirme
   getProfile: async () => {
     const response = await apiClient.get('/api/auth/profile');
-    return response.data.user;
+    return response.data; // Tüm response'u döndür (user, stats, recentPosts, etc.)
   },
 };
 

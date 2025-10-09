@@ -136,7 +136,11 @@ const Navbar: React.FC = () => {
                   className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Avatar
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(formatUserName(user))}&background=3b82f6&color=fff`}
+                    src={
+                      user?.profilePicture 
+                        ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${user.profilePicture}`
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(formatUserName(user))}&background=3b82f6&color=fff`
+                    }
                     alt={formatUserName(user)}
                     size="sm"
                   />
@@ -163,7 +167,11 @@ const Navbar: React.FC = () => {
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
                         <Avatar
-                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(formatUserName(user))}&background=3b82f6&color=fff`}
+                          src={
+                            user?.profilePicture 
+                              ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${user.profilePicture}`
+                              : `https://ui-avatars.com/api/?name=${encodeURIComponent(formatUserName(user))}&background=3b82f6&color=fff`
+                          }
                           alt={formatUserName(user)}
                           size="md"
                         />
@@ -302,7 +310,11 @@ const Navbar: React.FC = () => {
                   {/* User Info */}
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <Avatar
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(formatUserName(user))}&background=3b82f6&color=fff`}
+                      src={
+                        user?.profilePicture 
+                          ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${user.profilePicture}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(formatUserName(user))}&background=3b82f6&color=fff`
+                      }
                       alt={formatUserName(user)}
                       size="md"
                     />

@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Tag from '@/components/ui/Tag';
 import CommentBox from '@/components/CommentBox';
 import SimilarContent from '@/components/SimilarContent';
+import ShareModal from '@/components/ShareModal';
+import Toast from '@/components/ui/Toast';
 import { useQuestionsStore, useCommentsStore } from '@/stores';
 
 export default function QuestionDetailPage() {
@@ -17,7 +20,9 @@ export default function QuestionDetailPage() {
   
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // Zustand stores
   const { 
@@ -128,22 +133,10 @@ export default function QuestionDetailPage() {
     }
   };
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-  };
+
 
   const handleShare = () => {
-    if (navigator.share && currentQuestion) {
-      navigator.share({
-        title: currentQuestion.title,
-        text: currentQuestion.content.substring(0, 100),
-        url: window.location.href,
-      });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link kopyalandı!');
-    }
+    setShareModalOpen(true);
   };
 
   const handleAddComment = async (content: string) => {
@@ -242,6 +235,26 @@ export default function QuestionDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {currentQuestion && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          url={`${typeof window !== 'undefined' ? window.location.href : ''}`}
+          title={currentQuestion.title}
+          description={currentQuestion.content.substring(0, 200)}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
           {/* Ana İçerik */}
@@ -285,7 +298,9 @@ export default function QuestionDetailPage() {
                   <div className="flex items-center space-x-4 mb-10">
                     <Link href={`/profil/${author.username}`}>
                       <Avatar
-                        src={author.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
+                        src={author.profilePicture 
+                          ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${author.profilePicture}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(author.firstName + ' ' + author.lastName)}&background=3b82f6&color=fff`}
                         alt={`${author.firstName} ${author.lastName}`}
                         size="lg"
                         className="cursor-pointer hover:ring-4 hover:ring-blue-100 transition-all duration-300"
@@ -309,6 +324,45 @@ export default function QuestionDetailPage() {
 
               {/* Question Content - Card olmadan */}
               <div className="mb-12">
+                {/* Post Images */}
+                {currentQuestion.images && currentQuestion.images.length > 0 && (
+                  <div className="mb-8">
+                    {/* Ana resim */}
+                    <div className="relative rounded-2xl overflow-hidden shadow-xl mb-4" style={{ height: '400px' }}>
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${currentQuestion.images[selectedImageIndex]}`}
+                        alt={currentQuestion.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+
+                    {/* Thumbnail'ler (birden fazla resim varsa) */}
+                    {currentQuestion.images.length > 1 && (
+                      <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        {currentQuestion.images.map((imageUrl, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedImageIndex(index)}
+                            className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${
+                              selectedImageIndex === index 
+                                ? 'ring-4 ring-blue-500 scale-105' 
+                                : 'hover:ring-2 hover:ring-blue-300 hover:scale-105'
+                            }`}
+                          >
+                            <Image
+                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${imageUrl}`}
+                              alt={`Thumbnail ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="prose prose-lg prose-blue max-w-none">
                   <div className="text-gray-800 leading-relaxed font-light">
                     {currentQuestion.content}
@@ -367,16 +421,7 @@ export default function QuestionDetailPage() {
                   </div>
 
                   <div className="flex items-center space-x-4">
-                    <button
-                      onClick={handleBookmark}
-                      className={`p-3 rounded-xl transition-all duration-300 ${
-                        isBookmarked ? 'text-blue-500 bg-blue-50 border border-blue-200' : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50 hover:border hover:border-blue-200'
-                      }`}
-                    >
-                      <svg className="w-6 h-6" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                      </svg>
-                    </button>
+
 
                     <button
                       onClick={handleShare}
@@ -468,7 +513,9 @@ export default function QuestionDetailPage() {
                             <div className="flex items-center space-x-4 mb-4">
                               <div className="relative">
                                 <Avatar
-                                  src={recentAuthor.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(recentAuthor.firstName + ' ' + recentAuthor.lastName)}&background=3b82f6&color=fff`}
+                                  src={recentAuthor.profilePicture 
+                                    ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${recentAuthor.profilePicture}`
+                                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(recentAuthor.firstName + ' ' + recentAuthor.lastName)}&background=3b82f6&color=fff`}
                                   alt={`${recentAuthor.firstName} ${recentAuthor.lastName}`}
                                   size="md"
                                   className="ring-2 ring-white shadow-md"

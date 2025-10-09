@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import EventCard from '@/components/EventCard';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import Toast from '@/components/ui/Toast';
+import Avatar from '@/components/ui/Avatar';
 import { isAdmin } from '@/utils/auth';
 import { useEventsStore } from '@/stores';
 import type { Event, EventFilters } from '@/services/events';
@@ -26,6 +29,7 @@ const EventsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Tümü');
   const [selectedOrganizer, setSelectedOrganizer] = useState<string>('Tümü');
   const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
 
   const categories = ['Tümü', 'Meditasyon', 'Biyoenerji', 'Beslenme', 'Yoga', 'Stres Yönetimi', 'Spor'];
   const getUniqueOrganizers = () => {
@@ -65,20 +69,20 @@ const EventsPage: React.FC = () => {
   const handleRegister = async (eventId: string) => {
     try {
       await registerForEvent(eventId);
-      alert('Etkinliğe başarıyla kayıt oldunuz!');
-    } catch (error) {
+      setToast({ message: 'Etkinliğe başarıyla kayıt oldunuz! 🎉', type: 'success' });
+    } catch (error: any) {
       console.error('Kayıt hatası:', error);
-      alert('Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.');
+      setToast({ message: error.message || 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.', type: 'error' });
     }
   };
 
   const handleUnregister = async (eventId: string) => {
     try {
       await unregisterFromEvent(eventId);
-      alert('Etkinlik kaydınız iptal edildi.');
-    } catch (error) {
+      setToast({ message: 'Etkinlik kaydınız başarıyla iptal edildi.', type: 'info' });
+    } catch (error: any) {
       console.error('Kayıt iptal hatası:', error);
-      alert('Kayıt iptal edilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      setToast({ message: error.message || 'Kayıt iptal edilirken bir hata oluştu. Lütfen tekrar deneyin.', type: 'error' });
     }
   };
 
@@ -156,6 +160,15 @@ const EventsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 pb-6">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
       
@@ -414,44 +427,54 @@ const EventsPage: React.FC = () => {
                   <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col">
                     {/* Event Image */}
                     <div className="relative h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 overflow-hidden">
-                      {/* Dummy Images based on category */}
-                      <div className="absolute inset-0">
-                        {event.category === 'Meditasyon' && (
-                          <div className="w-full h-full bg-gradient-to-br from-purple-400 via-blue-400 to-indigo-500 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">🧘‍♀️</div>
-                          </div>
-                        )}
-                        {event.category === 'Beslenme' && (
-                          <div className="w-full h-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-500 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">🥗</div>
-                          </div>
-                        )}
-                        {event.category === 'Yoga' && (
-                          <div className="w-full h-full bg-gradient-to-br from-pink-400 via-rose-400 to-red-400 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">🧘‍♂️</div>
-                          </div>
-                        )}
-                        {event.category === 'Spor' && (
-                          <div className="w-full h-full bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-500 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">🏃‍♂️</div>
-                          </div>
-                        )}
-                        {event.category === 'Stres Yönetimi' && (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-500 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">😌</div>
-                          </div>
-                        )}
-                        {event.category === 'Biyoenerji' && (
-                          <div className="w-full h-full bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-500 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">⚡</div>
-                          </div>
-                        )}
-                        {!['Meditasyon', 'Beslenme', 'Yoga', 'Spor', 'Stres Yönetimi', 'Biyoenerji'].includes(event.category) && (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-400 via-slate-400 to-gray-500 flex items-center justify-center">
-                            <div className="text-6xl text-white/80">🎯</div>
-                          </div>
-                        )}
-                      </div>
+                      {/* Etkinlik resmi varsa göster, yoksa emoji/gradient */}
+                      {event.image ? (
+                        <Image
+                          src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${event.image}`}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        /* Dummy Images based on category */
+                        <div className="absolute inset-0">
+                          {event.category === 'Meditasyon' && (
+                            <div className="w-full h-full bg-gradient-to-br from-purple-400 via-blue-400 to-indigo-500 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">🧘‍♀️</div>
+                            </div>
+                          )}
+                          {event.category === 'Beslenme' && (
+                            <div className="w-full h-full bg-gradient-to-br from-green-400 via-emerald-400 to-teal-500 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">🥗</div>
+                            </div>
+                          )}
+                          {event.category === 'Yoga' && (
+                            <div className="w-full h-full bg-gradient-to-br from-pink-400 via-rose-400 to-red-400 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">🧘‍♂️</div>
+                            </div>
+                          )}
+                          {event.category === 'Spor' && (
+                            <div className="w-full h-full bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-500 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">🏃‍♂️</div>
+                            </div>
+                          )}
+                          {event.category === 'Stres Yönetimi' && (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-500 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">😌</div>
+                            </div>
+                          )}
+                          {event.category === 'Biyoenerji' && (
+                            <div className="w-full h-full bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-500 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">⚡</div>
+                            </div>
+                          )}
+                          {!['Meditasyon', 'Beslenme', 'Yoga', 'Spor', 'Stres Yönetimi', 'Biyoenerji'].includes(event.category) && (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-400 via-slate-400 to-gray-500 flex items-center justify-center">
+                              <div className="text-6xl text-white/80">🎯</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       
                       {/* Overlay Pattern */}
                       <div className="absolute inset-0 bg-black/20"></div>
@@ -488,25 +511,49 @@ const EventsPage: React.FC = () => {
                     {/* Card Content */}
                     <div className="p-6 flex flex-col flex-1">
                       {/* Title */}
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                        {event.title}
-                      </h3>
+                      <Link href={`/events/${event._id}`}>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors cursor-pointer">
+                          {event.title}
+                        </h3>
+                      </Link>
 
-                      {/* Instructor */}
+                      {/* Author/Organizer Info */}
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                          {event.instructor.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-sm">{event.instructor}</p>
-                          <p className="text-xs text-gray-500">{event.instructorTitle}</p>
-                        </div>
+                        {event.author ? (
+                          <>
+                            <Avatar
+                              src={event.author.profilePicture 
+                                ? `${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${event.author.profilePicture}`
+                                : `https://ui-avatars.com/api/?name=${encodeURIComponent(event.author.firstName + ' ' + event.author.lastName)}&background=3b82f6&color=fff`}
+                              alt={`${event.author.firstName} ${event.author.lastName}`}
+                              size="md"
+                            />
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">
+                                {event.author.firstName} {event.author.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500">@{event.author.username}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                              {event.instructor.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{event.instructor}</p>
+                              <p className="text-xs text-gray-500">{event.instructorTitle}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Description */}
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">
-                        {event.description}
-                      </p>
+                      <Link href={`/events/${event._id}`}>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed flex-1 cursor-pointer">
+                          {event.description}
+                        </p>
+                      </Link>
 
                       {/* Event Details */}
                       <div className="space-y-2 mb-4">
@@ -571,27 +618,38 @@ const EventsPage: React.FC = () => {
                       </div>
 
                       {/* Register Button - Always at bottom */}
-                      <div className="mt-auto">
+                      <div className="mt-auto flex gap-2">
+                        <Link href={`/events/${event._id}`} className="flex-1">
+                          <button className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                            Detayları Gör
+                          </button>
+                        </Link>
                         {event.isRegistered ? (
                           <button
-                            onClick={() => handleUnregister(event._id)}
-                            className="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 bg-red-500 text-white hover:bg-red-600 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnregister(event._id);
+                            }}
+                            className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 bg-red-500 text-white hover:bg-red-600 shadow-lg hover:shadow-xl"
                           >
-                            ❌ Kaydı İptal Et
+                            Kaydı İptal Et
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleRegister(event._id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRegister(event._id);
+                            }}
                             disabled={event.currentParticipants >= event.maxParticipants}
-                            className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+                            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
                               event.currentParticipants >= event.maxParticipants
-                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transform hover:-translate-y-1 shadow-lg hover:shadow-xl'
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
                             }`}
                           >
                             {event.currentParticipants >= event.maxParticipants 
-                              ? '❌ Kontenjan Dolu' 
-                              : '🎯 Hemen Katıl'
+                              ? 'Kontenjan Dolu' 
+                              : 'Hemen Katıl'
                             }
                           </button>
                         )}

@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Tag from '@/components/ui/Tag';
 import CommentBox from '@/components/CommentBox';
 import SimilarContent from '@/components/SimilarContent';
+import ShareModal from '@/components/ShareModal';
+import Toast from '@/components/ui/Toast';
 import { useBlogsStore, useCommentsStore } from '@/stores';
 
 export default function BlogDetailPage() {
@@ -16,7 +19,9 @@ export default function BlogDetailPage() {
   
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error' | 'warning' | 'info'} | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // Zustand stores
   const { 
@@ -121,22 +126,8 @@ export default function BlogDetailPage() {
     }
   };
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-  };
-
   const handleShare = () => {
-    if (navigator.share && currentBlog) {
-      navigator.share({
-        title: currentBlog.title,
-        text: currentBlog.content.substring(0, 100),
-        url: window.location.href,
-      });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link kopyalandı!');
-    }
+    setShareModalOpen(true);
   };
 
   const handleAddComment = async (content: string) => {
@@ -230,6 +221,26 @@ export default function BlogDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {currentBlog && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          url={`${typeof window !== 'undefined' ? window.location.href : ''}`}
+          title={currentBlog.title}
+          description={currentBlog.content.substring(0, 200)}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
           {/* Ana İçerik */}
@@ -307,6 +318,45 @@ export default function BlogDetailPage() {
 
               {/* Blog Content */}
               <div className="mb-12">
+                {/* Blog Images */}
+                {currentBlog.images && currentBlog.images.length > 0 && (
+                  <div className="mb-8">
+                    {/* Ana resim */}
+                    <div className="relative rounded-2xl overflow-hidden shadow-xl mb-4" style={{ height: '400px' }}>
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${currentBlog.images[selectedImageIndex]}`}
+                        alt={currentBlog.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+
+                    {/* Thumbnail'ler (birden fazla resim varsa) */}
+                    {currentBlog.images.length > 1 && (
+                      <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        {currentBlog.images.map((imageUrl, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedImageIndex(index)}
+                            className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${
+                              selectedImageIndex === index 
+                                ? 'ring-4 ring-green-500 scale-105' 
+                                : 'hover:ring-2 hover:ring-green-300 hover:scale-105'
+                            }`}
+                          >
+                            <Image
+                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${imageUrl}`}
+                              alt={`Thumbnail ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Medical Disclaimer */}
                 {currentBlog.medicalDisclaimer && (
                   <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8 rounded-r-lg">
@@ -384,17 +434,6 @@ export default function BlogDetailPage() {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                      <button
-                        onClick={handleBookmark}
-                        className={`p-3 rounded-xl transition-all duration-300 ${
-                          isBookmarked ? 'text-blue-500 bg-blue-50 border border-blue-200' : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50 hover:border hover:border-blue-200'
-                        }`}
-                      >
-                        <svg className="w-6 h-6" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                        </svg>
-                      </button>
-
                       <button
                         onClick={handleShare}
                         className="p-3 rounded-xl text-gray-500 hover:text-green-500 hover:bg-green-50 transition-all duration-300 hover:border hover:border-green-200"

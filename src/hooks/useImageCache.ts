@@ -11,7 +11,7 @@ const imageCache = new Map<string, ImageCacheEntry>();
 
 export const useImageCache = () => {
   const [cache, setCache] = useState<Map<string, ImageCacheEntry>>(imageCache);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cache temizleme fonksiyonu (5 dakikada bir)
   const clearOldCache = useCallback(() => {

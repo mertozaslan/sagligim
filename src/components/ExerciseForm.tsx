@@ -106,7 +106,7 @@ export default function ExerciseForm({ isOpen, onClose, onSubmit, initialData, t
             maxLength={500}
           />
           {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
-          <p className="text-gray-500 text-sm mt-1">{formData.description.length}/500 karakter</p>
+          <p className="text-gray-500 text-sm mt-1">{formData.description?.length || 0}/500 karakter</p>
         </div>
 
         {/* Süre ve Periyot */}

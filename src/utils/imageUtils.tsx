@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useImageCache } from '@/hooks/useImageCache';
 

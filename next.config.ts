@@ -20,6 +20,10 @@ const nextConfig = {
         hostname: 'localhost',
         port: '3000',
       },
+      {
+        protocol: 'https',
+        hostname: 'api.saglikhep.com',
+      }
     ],
     // Localhost için unoptimized kullan, production'da optimize et
     unoptimized: process.env.NODE_ENV === 'development',

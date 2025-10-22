@@ -6,6 +6,7 @@ import Image from 'next/image';
 import EventCard from '@/components/EventCard';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import { OptimizedImage, getImageUrl } from '@/utils/imageUtils';
 import Toast from '@/components/ui/Toast';
 import Avatar from '@/components/ui/Avatar';
 import { isAdmin } from '@/utils/auth';
@@ -429,11 +430,14 @@ const EventsPage: React.FC = () => {
                     <div className="relative h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 overflow-hidden">
                       {/* Etkinlik resmi varsa göster, yoksa emoji/gradient */}
                       {event.image ? (
-                        <Image
-                          src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${event.image}`}
+                        <OptimizedImage
+                          src={getImageUrl(event.image)}
                           alt={event.title}
                           fill
                           className="object-cover"
+                          priority={false}
+                          loading="lazy"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                       ) : (
                         /* Dummy Images based on category */

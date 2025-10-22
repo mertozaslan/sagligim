@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Tag from '@/components/ui/Tag';
+import { OptimizedImage, getImageUrl } from '@/utils/imageUtils';
 import CommentBox from '@/components/CommentBox';
 import SimilarContent from '@/components/SimilarContent';
 import ShareModal from '@/components/ShareModal';
@@ -323,11 +324,14 @@ export default function BlogDetailPage() {
                   <div className="mb-8">
                     {/* Ana resim */}
                     <div className="relative rounded-2xl overflow-hidden shadow-xl mb-4" style={{ height: '400px' }}>
-                      <Image
-                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${currentBlog.images[selectedImageIndex]}`}
+                      <OptimizedImage
+                        src={getImageUrl(currentBlog.images[selectedImageIndex])}
                         alt={currentBlog.title}
                         fill
                         className="object-cover"
+                        priority={true}
+                        loading="eager"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
                       />
                     </div>
 
@@ -344,11 +348,14 @@ export default function BlogDetailPage() {
                                 : 'hover:ring-2 hover:ring-green-300 hover:scale-105'
                             }`}
                           >
-                            <Image
-                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${imageUrl}`}
+                            <OptimizedImage
+                              src={getImageUrl(imageUrl)}
                               alt={`Thumbnail ${index + 1}`}
                               fill
                               className="object-cover"
+                              priority={false}
+                              loading="lazy"
+                              sizes="(max-width: 768px) 25vw, (max-width: 1200px) 20vw, 15vw"
                             />
                           </button>
                         ))}

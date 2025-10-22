@@ -11,6 +11,7 @@ import { useQuestionsStore, useEventsStore, useExpertsStore } from '@/stores';
 import { Post, CreatePostData } from '@/services/posts';
 import type { Event } from '@/services/events';
 import { uploadService } from '@/services/upload';
+import { OptimizedImage, getImageUrl } from '@/utils/imageUtils';
 
 // Post ve Comment interface'leri artık services'den import ediliyor
 
@@ -870,11 +871,13 @@ export default function CommunityPage() {
                       /* Seçilen resim önizleme */
                       <div className="relative group">
                         <div className="relative rounded-xl overflow-hidden border-2 border-white shadow-lg" style={{ height: '250px' }}>
-                          <Image
+                          <OptimizedImage
                             src={URL.createObjectURL(selectedFile)}
                             alt="Preview"
                             fill
                             className="object-cover"
+                            priority={false}
+                            loading="eager"
                           />
                         </div>
                         <button
@@ -1067,11 +1070,14 @@ export default function CommunityPage() {
                           {post.images && post.images.length > 0 && (
                             <Link href={`/posts/${post._id}`}>
                               <div className="relative mb-4 rounded-xl overflow-hidden cursor-pointer group" style={{ height: '200px' }}>
-                                <Image
-                                  src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${post.images[0]}`}
+                                <OptimizedImage
+                                  src={getImageUrl(post.images[0])}
                                   alt={post.title}
                                   fill
                                   className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  priority={false}
+                                  loading="lazy"
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 />
                                 {post.images.length > 1 && (
                                   <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center space-x-1">

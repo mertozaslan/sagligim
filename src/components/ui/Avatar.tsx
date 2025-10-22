@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import Image from 'next/image';
 
 interface AvatarProps {
@@ -9,7 +9,7 @@ interface AvatarProps {
   fallback?: string;
 }
 
-const Avatar: React.FC<AvatarProps> = ({
+const Avatar: React.FC<AvatarProps> = memo(({
   src,
   alt,
   size = 'md',
@@ -29,14 +29,24 @@ const Avatar: React.FC<AvatarProps> = ({
   const config = sizeConfig[size];
 
   // Fallback için kullanıcının adının ilk harfini al
-  const getInitials = (name: string) => {
+  const getInitials = useCallback((name: string) => {
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  };
+  }, []);
+
+  // Error handler'ı memoize et
+  const handleError = useCallback(() => {
+    setHasError(true);
+  }, []);
+
+  // Localhost kontrolü için memoize edilmiş fonksiyon
+  const isLocalhost = useCallback((url: string) => {
+    return url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1');
+  }, []);
 
   if (src && !hasError) {
     return (
@@ -46,10 +56,13 @@ const Avatar: React.FC<AvatarProps> = ({
         width={config.pixels}
         height={config.pixels}
         className={`${config.size} rounded-full object-cover ${className}`}
-        onError={() => {
-          console.error('Avatar image failed to load:', src);
-          setHasError(true);
-        }}
+        onError={handleError}
+        unoptimized={isLocalhost(src)}
+        // Priority ve loading optimizasyonları
+        priority={false}
+        loading="lazy"
+        // Cache kontrolü için key ekle
+        key={`${src}-${size}`}
       />
     );
   }
@@ -59,6 +72,8 @@ const Avatar: React.FC<AvatarProps> = ({
       {fallback ? getInitials(fallback) : getInitials(alt)}
     </div>
   );
-};
+});
+
+Avatar.displayName = 'Avatar';
 
 export default Avatar; 

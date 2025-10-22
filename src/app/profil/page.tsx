@@ -10,6 +10,12 @@ import Modal from '@/components/ui/Modal';
 import { getCurrentUser, isAuthenticated, logout, formatUserName, calculateAge } from '@/utils/auth';
 import { User, authService, ProfileResponse, ProfileStats } from '@/services/auth';
 import { uploadService } from '@/services/upload';
+import { useExerciseStore } from '@/stores/exercisesStore';
+import ExerciseForm from '@/components/ExerciseForm';
+import ExerciseCalendar from '@/components/ExerciseCalendar';
+import ExerciseList from '@/components/ExerciseList';
+import ExerciseStats from '@/components/ExerciseStats';
+import ExerciseTracker from '@/components/ExerciseTracker';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -37,6 +43,41 @@ export default function ProfilePage() {
     type: null,
     title: ''
   });
+
+  // Egzersiz state'leri
+  const [exerciseFormModal, setExerciseFormModal] = useState<{
+    isOpen: boolean;
+    exercise: any;
+    title: string;
+  }>({
+    isOpen: false,
+    exercise: null,
+    title: ''
+  });
+  const [selectedExerciseDate, setSelectedExerciseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [activeTab, setActiveTab] = useState<'profile' | 'exercises'>('profile');
+
+  // Egzersiz store
+  const {
+    exercises,
+    activeExercises,
+    activeSummary,
+    stats: exerciseStats,
+    dailySummary,
+    loading: exerciseLoading,
+    error: exerciseError,
+    fetchExercises,
+    fetchActiveExercises,
+    fetchStats,
+    fetchDailySummary,
+    createExercise,
+    updateExercise,
+    deleteExercise,
+    completeExercise,
+    toggleExercise,
+    setSelectedDate
+  } = useExerciseStore();
+
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -88,6 +129,23 @@ export default function ProfilePage() {
     loadUserProfile();
   }, [router]);
 
+  // Egzersiz verilerini yükle
+  useEffect(() => {
+    const loadExerciseData = async () => {
+      try {
+        await Promise.all([
+          fetchExercises(),
+          fetchActiveExercises('daily'), // Daily olarak yükle
+          fetchStats(),
+          fetchDailySummary()
+        ]);
+      } catch (error) {
+        console.error('Egzersiz verileri yüklenemedi:', error);
+      }
+    };
+
+    loadExerciseData();
+  }, [fetchExercises, fetchActiveExercises, fetchStats, fetchDailySummary]);
   const handleLogout = async () => {
     await logout();
     router.push('/');
@@ -255,6 +313,74 @@ export default function ProfilePage() {
       type: null,
       title: ''
     });
+  };
+
+  // Egzersiz fonksiyonları
+  const handleCreateExercise = () => {
+    setExerciseFormModal({
+      isOpen: true,
+      exercise: null,
+      title: 'Yeni Egzersiz Oluştur'
+    });
+  };
+
+  const handleEditExercise = (exercise: any) => {
+    setExerciseFormModal({
+      isOpen: true,
+      exercise,
+      title: 'Egzersizi Düzenle'
+    });
+  };
+
+  const handleExerciseSubmit = async (data: any) => {
+    try {
+      if (exerciseFormModal.exercise) {
+        await updateExercise(exerciseFormModal.exercise._id, data);
+        setToast({ message: 'Egzersiz başarıyla güncellendi! 🎉', type: 'success' });
+      } else {
+        await createExercise(data);
+        setToast({ message: 'Egzersiz başarıyla oluşturuldu! 🎉', type: 'success' });
+      }
+      setExerciseFormModal({ isOpen: false, exercise: null, title: '' });
+    } catch (error: any) {
+      setToast({ message: error.message || 'Bir hata oluştu!', type: 'error' });
+    }
+  };
+
+  const handleExerciseComplete = async (id: string, data: any) => {
+    try {
+      await completeExercise(id, data);
+      await fetchDailySummary();
+      setToast({ message: 'Egzersiz başarıyla tamamlandı! 🎉', type: 'success' });
+    } catch (error: any) {
+      setToast({ message: error.message || 'Egzersiz tamamlanamadı!', type: 'error' });
+    }
+  };
+
+  const handleExerciseToggle = async (id: string) => {
+    try {
+      await toggleExercise(id);
+      setToast({ message: 'Egzersiz durumu değiştirildi!', type: 'success' });
+    } catch (error: any) {
+      setToast({ message: error.message || 'Egzersiz durumu değiştirilemedi!', type: 'error' });
+    }
+  };
+
+  const handleExerciseDelete = async (id: string) => {
+    if (confirm('Bu egzersizi silmek istediğinizden emin misiniz?')) {
+      try {
+        await deleteExercise(id);
+        setToast({ message: 'Egzersiz başarıyla silindi!', type: 'success' });
+      } catch (error: any) {
+        setToast({ message: error.message || 'Egzersiz silinemedi!', type: 'error' });
+      }
+    }
+  };
+
+  const handleDateSelect = (date: string) => {
+    setSelectedExerciseDate(date);
+    setSelectedDate(date);
+    fetchDailySummary(date);
   };
 
   // Modal içeriğini render et
@@ -503,6 +629,15 @@ export default function ProfilePage() {
         </div>
       </Modal>
 
+      {/* Exercise Form Modal */}
+      <ExerciseForm
+        isOpen={exerciseFormModal.isOpen}
+        onClose={() => setExerciseFormModal({ isOpen: false, exercise: null, title: '' })}
+        onSubmit={handleExerciseSubmit}
+        initialData={exerciseFormModal.exercise}
+        title={exerciseFormModal.title}
+      />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 md:p-8 mb-8">
@@ -531,6 +666,10 @@ export default function ProfilePage() {
                   fill
                   className="object-cover"
                   unoptimized={!user.profilePicture}
+                  onError={() => {
+                    // Profil fotoğrafı yüklenemezse fallback'e geç
+                    console.warn('Profil fotoğrafı yüklenemedi, fallback kullanılıyor');
+                  }}
                 />
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-60 transition-opacity flex items-center justify-center">
@@ -599,8 +738,45 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-all ${
+                activeTab === 'profile'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profil Bilgileri
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('exercises')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-all ${
+                activeTab === 'exercises'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Egzersizlerim
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'profile' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
           {/* Profile Info - Main Content */}
           <div className="lg:col-span-3 space-y-6">
             {/* Personal & Account Information - Birleştirilmiş */}
@@ -831,6 +1007,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+
 
             {/* Recent Activity - Son aktiviteler */}
             {profileData && (
@@ -1180,11 +1357,75 @@ export default function ProfilePage() {
                   </span>
                   <span className="text-lg font-bold text-pink-600">{stats?.totalParticipatingEvents || 0}</span>
                 </button>
+                <button
+                  onClick={handleCreateExercise}
+                  className="w-full flex justify-between items-center p-3 bg-white rounded-xl hover:shadow-md transition-all cursor-pointer hover:bg-green-50 group"
+                >
+                  <span className="text-sm text-gray-600 flex items-center gap-2">
+                    Egzersiz
+                    <svg className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </span>
+                  <span className="text-lg font-bold text-green-600">{exerciseStats?.totalExercises || 0}</span>
+                </button>
    
               </div>
             </div>
           </div>
         </div>
+        ) : (
+          /* Egzersiz Tab */
+          <div className="space-y-6">
+
+            {/* Egzersiz İstatistikleri */}
+            <ExerciseStats 
+              stats={exerciseStats} 
+              dailySummary={dailySummary} 
+              loading={exerciseLoading}
+              onCreateExercise={handleCreateExercise}
+            />
+
+            {/* Egzersiz Takibi */}
+            <ExerciseTracker 
+              data={activeExercises}
+              loading={exerciseLoading}
+              onComplete={async (exerciseId: string) => {
+                try {
+                  await completeExercise(exerciseId, {});
+                  await fetchActiveExercises('daily');
+                  setToast({ message: 'Egzersiz başarıyla tamamlandı! 🎉', type: 'success' });
+                } catch (error: any) {
+                  setToast({ message: error.message || 'Egzersiz tamamlanamadı!', type: 'error' });
+                }
+              }}
+              onPeriodChange={async (period: 'daily' | 'weekly' | 'monthly') => {
+                try {
+                  await fetchActiveExercises(period);
+                  setToast({ message: `${period === 'daily' ? 'Günlük' : period === 'weekly' ? 'Haftalık' : 'Aylık'} egzersizler yüklendi`, type: 'info' });
+                } catch (error: any) {
+                  setToast({ message: error.message || 'Egzersizler yüklenemedi!', type: 'error' });
+                }
+              }}
+            />
+
+            {/* Egzersiz Takvimi */}
+            <ExerciseCalendar
+              exercises={exercises}
+              onDateSelect={handleDateSelect}
+              selectedDate={selectedExerciseDate}
+            />
+
+            {/* Egzersiz Listesi */}
+            <ExerciseList
+              exercises={exercises}
+              onComplete={handleExerciseComplete}
+              onToggle={handleExerciseToggle}
+              onDelete={handleExerciseDelete}
+              loading={exerciseLoading}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Toast from '@/components/ui/Toast';
+import { OptimizedImage, getImageUrl } from '@/utils/imageUtils';
 import ShareModal from '@/components/ShareModal';
 import { useEventsStore } from '@/stores';
 
@@ -128,11 +129,14 @@ export default function EventDetailPage() {
           {/* Event Image */}
           {event.image ? (
             <div className="relative h-96">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${event.image}`}
+              <OptimizedImage
+                src={getImageUrl(event.image)}
                 alt={event.title}
                 fill
                 className="object-cover"
+                priority={true}
+                loading="eager"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               

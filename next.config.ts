@@ -21,7 +21,13 @@ const nextConfig = {
         port: '3000',
       },
     ],
-    unoptimized: false,
+    // Localhost için unoptimized kullan, production'da optimize et
+    unoptimized: process.env.NODE_ENV === 'development',
+    // Image caching için minimum cache süresi
+    minimumCacheTTL: 60,
+    // Daha agresif caching
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 

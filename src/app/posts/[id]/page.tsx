@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import { OptimizedImage, getImageUrl } from '@/utils/imageUtils';
 import Tag from '@/components/ui/Tag';
 import CommentBox from '@/components/CommentBox';
 import SimilarContent from '@/components/SimilarContent';
@@ -329,11 +330,14 @@ export default function QuestionDetailPage() {
                   <div className="mb-8">
                     {/* Ana resim */}
                     <div className="relative rounded-2xl overflow-hidden shadow-xl mb-4" style={{ height: '400px' }}>
-                      <Image
-                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${currentQuestion.images[selectedImageIndex]}`}
+                      <OptimizedImage
+                        src={getImageUrl(currentQuestion.images[selectedImageIndex])}
                         alt={currentQuestion.title}
                         fill
                         className="object-cover"
+                        priority={true}
+                        loading="eager"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
                       />
                     </div>
 
@@ -350,11 +354,14 @@ export default function QuestionDetailPage() {
                                 : 'hover:ring-2 hover:ring-blue-300 hover:scale-105'
                             }`}
                           >
-                            <Image
-                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL || 'https://api.saglikhep.com'}${imageUrl}`}
+                            <OptimizedImage
+                              src={getImageUrl(imageUrl)}
                               alt={`Thumbnail ${index + 1}`}
                               fill
                               className="object-cover"
+                              priority={false}
+                              loading="lazy"
+                              sizes="(max-width: 768px) 25vw, (max-width: 1200px) 20vw, 15vw"
                             />
                           </button>
                         ))}
